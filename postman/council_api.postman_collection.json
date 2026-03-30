@@ -1,0 +1,357 @@
+{
+  "info": {
+    "name": "Council API",
+    "description": "Postman collection for testing Council backend endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "paperId",
+      "value": "paper_1ba6db38d4c86a5e"
+    },
+    {
+      "key": "paperIdA",
+      "value": "paper_1ba6db38d4c86a5e"
+    },
+    {
+      "key": "paperIdB",
+      "value": "paper_2ba6db38d4c86a5e"
+    },
+    {
+      "key": "claimText",
+      "value": "We demonstrate significant improvements over prior baselines."
+    },
+    {
+      "key": "paperIdsCsv",
+      "value": "paper_1ba6db38d4c86a5e,paper_2ba6db38d4c86a5e"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl (query)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"transformer pretraining\",\n  \"limit_per_source\": 2,\n  \"max_papers\": 3,\n  \"concurrency\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/crawl",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl (question)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What are the key innovations in transformer architectures and pre-training methods?\",\n  \"topic_count\": 4,\n  \"limit_per_source\": 2,\n  \"max_papers\": 3,\n  \"concurrency\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/crawl",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List Papers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/papers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "papers"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Extract Single Paper",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/extract/{{paperId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "extract",
+            "{{paperId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Extract All Papers",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/extract-all",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "extract-all"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Extract All Papers (Background)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/extract-all/background",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "extract-all",
+            "background"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Extract All Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/extract-all/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "extract-all",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Analyze",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_ids\": []\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/analyze",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl + Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"\",\n  \"question\": \"How can graph neural networks improve traffic forecasting in smart cities?\",\n  \"topic_count\": 4,\n  \"limit_per_source\": 10,\n  \"max_papers\": 20,\n  \"concurrency\": 6,\n  \"target_research_finding\": \"GNN improves traffic forecasting\",\n  \"top_k\": 10\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/crawl-report",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Latest Report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/report",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Final Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"target_research_finding\": \"Scaling improves low-resource translation quality\",\n  \"top_k\": 10,\n  \"paper_ids\": []\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/final-report",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "final-report"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Citation Jump",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_id\": \"{{paperId}}\",\n  \"claim_text\": \"{{claimText}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/citation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "citation"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Debate (SSE)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_id_A\": \"{{paperIdA}}\",\n  \"paper_id_B\": \"{{paperIdB}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/debate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "debate"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Heatmap",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_ids\": [\n    \"{{paperIdA}}\",\n    \"{{paperIdB}}\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/heatmap",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "heatmap"
+          ]
+        }
+      }
+    }
+  ]
+}
