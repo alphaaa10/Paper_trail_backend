@@ -324,13 +324,52 @@ def _find_simple_contradictions(claims: list[dict]) -> list[dict]:
             right_negative = any(word in right_text for word in negative_words)
 
             if left_positive and right_negative:
-                contradictions.append({"paper_a": left, "paper_b": right})
+                contradictions.append(
+                    {
+                        "paper_a": left,
+                        "paper_b": right,
+                        "reason": _heuristic_contradiction_reason(
+                            left_claim=left.get("claim", ""),
+                            right_claim=right.get("claim", ""),
+                            direction="positive_vs_negative",
+                        ),
+                        "confidence": "medium",
+                        "mode": "heuristic",
+                    }
+                )
             if left_negative and right_positive:
-                contradictions.append({"paper_a": left, "paper_b": right})
+                contradictions.append(
+                    {
+                        "paper_a": left,
+                        "paper_b": right,
+                        "reason": _heuristic_contradiction_reason(
+                            left_claim=left.get("claim", ""),
+                            right_claim=right.get("claim", ""),
+                            direction="negative_vs_positive",
+                        ),
+                        "confidence": "medium",
+                        "mode": "heuristic",
+                    }
+                )
 
             if len(contradictions) >= 20:
                 return contradictions
     return contradictions
+
+
+def _heuristic_contradiction_reason(left_claim: str, right_claim: str, direction: str) -> str:
+    left_clean = " ".join(str(left_claim).split())[:220]
+    right_clean = " ".join(str(right_claim).split())[:220]
+
+    if direction == "positive_vs_negative":
+        summary = "One claim reports improvement while the other reports degradation or no improvement on overlapping terms."
+    else:
+        summary = "One claim reports degradation or no improvement while the other reports improvement on overlapping terms."
+
+    return (
+        summary
+        + f" Claim A: '{left_clean}'. Claim B: '{right_clean}'."
+    )
 
 
 def _suggest_gaps(methods: list[dict], datasets: list[dict], contradiction_count: int) -> list[str]:
@@ -433,6 +472,12 @@ def _build_contradiction_analysis(contradictions: list[dict], papers: list[dict]
         reason = " ".join(str(item.get("reason", "")).split())[:300]
         claim_a = " ".join(str(left.get("claim", "")).split())[:280]
         claim_b = " ".join(str(right.get("claim", "")).split())[:280]
+        if not reason:
+            reason = _heuristic_contradiction_reason(
+                left_claim=claim_a,
+                right_claim=claim_b,
+                direction="positive_vs_negative",
+            )[:300]
 
         for source_id, target_id in [(left_id, right_id), (right_id, left_id)]:
             if source_id not in paper_index:
@@ -455,6 +500,8 @@ def _build_contradiction_analysis(contradictions: list[dict], papers: list[dict]
             "claim_a": claim_a,
             "claim_b": claim_b,
             "reason": reason,
+            "confidence": str(item.get("confidence", "medium")),
+            "mode": str(item.get("mode", "unknown")),
         }
         if len(paper_index[left_id]["examples"]) < 3:
             paper_index[left_id]["examples"].append(example)

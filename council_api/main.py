@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from research_crawler.config import load_environment
@@ -51,6 +52,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve downloaded PDFs over HTTP so frontend can open them directly in a browser tab.
+app.mount("/pdf", StaticFiles(directory=str(PDF_DIR)), name="pdf_files")
 
 _ensure_data_dirs = [PDF_DIR, METADATA_DIR, EXTRACTED_DIR, REPORTS_DIR, LOGS_DIR]
 for _dir in _ensure_data_dirs:

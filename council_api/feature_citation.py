@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import re
+from urllib.parse import quote
 from pathlib import Path
 from typing import Any
 
 import fitz
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/feature", tags=["feature"])
@@ -26,6 +27,7 @@ class CitationResponse(BaseModel):
     paper_display_name: str = ""
     claim_text: str
     pdf_path: str
+    pdf_url: str = ""
     page_number: int
     bbox: list[float]
 
@@ -152,7 +154,7 @@ def _tokenize(text: str) -> set[str]:
 
 
 @router.post("/citation", response_model=CitationResponse)
-def citation_jump(payload: CitationRequest) -> CitationResponse:
+def citation_jump(payload: CitationRequest, request: Request) -> CitationResponse:
     resolved_paper_id = _resolve_paper_id(payload.paper_id)
     metadata_path = _resolve_metadata_path(resolved_paper_id)
 
@@ -173,9 +175,21 @@ def citation_jump(payload: CitationRequest) -> CitationResponse:
         paper_display_name=_paper_display_name(metadata=metadata, fallback_id=resolved_paper_id),
         claim_text=payload.claim_text,
         pdf_path=str(pdf_path),
+        pdf_url=_build_pdf_url(pdf_path=pdf_path, request=request),
         page_number=page_number,
         bbox=bbox,
     )
+
+
+def _build_pdf_url(pdf_path: Path, request: Request) -> str:
+    pdf_root = ROOT_DIR / "data" / "pdf"
+    try:
+        relative = pdf_path.resolve().relative_to(pdf_root.resolve())
+    except Exception:
+        return ""
+
+    relative_url_path = quote(relative.as_posix())
+    return str(request.base_url).rstrip("/") + "/pdf/" + relative_url_path
 
 
 def _resolve_paper_id(identifier: str) -> str:
