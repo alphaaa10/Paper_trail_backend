@@ -1,0 +1,437 @@
+{
+  "paper_A": {
+    "id": "paper_7d19cb661bde64f0",
+    "title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+    "display_name": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021)"
+  },
+  "paper_B": {
+    "id": "paper_8861a66c34b2c6fc",
+    "title": "Deep Learning for Generic Object Detection: A Survey",
+    "display_name": "Deep Learning for Generic Object Detection: A Survey (2019)"
+  },
+  "axes_analysis": {
+    "problem_framing": {
+      "axis": "problem_framing",
+      "description": "Problem Definition & Relevance",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Clear problem statement (score: 3/3) with 5 relevance signals. Abstract length: 3900 chars."
+      },
+      "paper_B": {
+        "score": 4,
+        "reasoning": "Clear problem statement (score: 1/3) with 1 relevance signals. Abstract length: 10000 chars."
+      },
+      "winner": "A",
+      "score_diff": 2,
+      "score_award": 6,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'problem_framing', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+        "confidence": "medium"
+      }
+    },
+    "literature_review": {
+      "axis": "literature_review",
+      "description": "Literature Coverage & Positioning",
+      "paper_A": {
+        "score": 7,
+        "reasoning": "Referenced 57 sources with 1 positioning statements. Coverage score: 4/4."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Referenced 80 sources with 0 positioning statements. Coverage score: 4/4."
+      },
+      "winner": "A",
+      "score_diff": 1,
+      "score_award": 7,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'literature_review', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 1).",
+        "confidence": "medium"
+      }
+    },
+    "methodology": {
+      "axis": "methodology",
+      "description": "Methodological Validity",
+      "paper_A": {
+        "score": 10,
+        "reasoning": "Method diversity: 4 unique methods. Methodology detail score: 2/2. Validity signals: 3."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Method diversity: 1 unique methods. Methodology detail score: 2/2. Validity signals: 1."
+      },
+      "winner": "A",
+      "score_diff": 4,
+      "score_award": 10,
+      "evidence": {
+        "paper_A_claims": [
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "\u2022 We explain CNN in deep which the most popular deep learning algorithm by describing the concepts, theory, and state-of-the-art architectures.",
+          "Survey methodology We have reviewed the significant research papers in the field published during 2010\u2013 2020, mainly from the years of 2020 and 2019 with some papers from 2021."
+        ],
+        "paper_B_claims": [
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o"
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+        "premise_B": "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+        "inference": "On axis 'methodology', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 4).",
+        "confidence": "high"
+      }
+    },
+    "data_dataset": {
+      "axis": "data_dataset",
+      "description": "Data Quality & Credibility",
+      "paper_A": {
+        "score": 5,
+        "reasoning": "Dataset diversity: 1 unique datasets (0 trusted). Scale signals: 2."
+      },
+      "paper_B": {
+        "score": 8,
+        "reasoning": "Dataset diversity: 3 unique datasets (2 trusted). Scale signals: 1."
+      },
+      "winner": "B",
+      "score_diff": 3,
+      "score_award": 8,
+      "evidence": {
+        "paper_A_claims": [
+          "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "They obtained the state-of-the-art detection results on the dataset of the International Pattern Recognition Conference (ICPR) 2012 Mitosis Detection Competition."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'data_dataset', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 3).",
+        "confidence": "high"
+      }
+    },
+    "results_metrics": {
+      "axis": "results_metrics",
+      "description": "Results & Metrics Appropriateness",
+      "paper_A": {
+        "score": 7,
+        "reasoning": "Metric rigor: 3 signals, 1/3 score. Comparison signals: 2. Evidence-backed claims: 2."
+      },
+      "paper_B": {
+        "score": 4,
+        "reasoning": "Metric rigor: 1 signals, 0/3 score. Comparison signals: 0. Evidence-backed claims: 8."
+      },
+      "winner": "A",
+      "score_diff": 3,
+      "score_award": 7,
+      "evidence": {
+        "paper_A_claims": [
+          "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "Next, the network parameters are repeatedly updated by the agent to obtain an improved esti - mate for the preferred outputs.",
+          "They obtained the state-of-the-art detection results on the dataset of the International Pattern Recognition Conference (ICPR) 2012 Mitosis Detection Competition."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig.",
+          "2015) which showed that increas- ing depth can improve the representational power."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'results_metrics', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 3).",
+        "confidence": "high"
+      }
+    },
+    "reproducibility": {
+      "axis": "reproducibility",
+      "description": "Reproducibility & Transparency",
+      "paper_A": {
+        "score": 4,
+        "reasoning": "Code/resource signals: 0. Implementation detail score: 2/2. Parameter transparency: 0."
+      },
+      "paper_B": {
+        "score": 4,
+        "reasoning": "Code/resource signals: 0. Implementation detail score: 2/2. Parameter transparency: 0."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 4,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'reproducibility', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "limitations": {
+      "axis": "limitations",
+      "description": "Honest Limitations Statement",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Limitation depth: 5 signals. Conclusion quality: 1/2. Honesty signals: 0."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Limitation depth: 3 signals. Conclusion quality: 1/2. Honesty signals: 0."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 6,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'limitations', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "ethical_impact": {
+      "axis": "ethical_impact",
+      "description": "Ethical & Social Considerations",
+      "paper_A": {
+        "score": 5,
+        "reasoning": "Ethical consideration signals: 1. Real-world impact discussion: 2."
+      },
+      "paper_B": {
+        "score": 5,
+        "reasoning": "Ethical consideration signals: 1. Real-world impact discussion: 2."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 5,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'ethical_impact', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "novelty": {
+      "axis": "novelty",
+      "description": "Novelty vs Incremental Work",
+      "paper_A": {
+        "score": 5,
+        "reasoning": "Novelty claims: 0. Incremental signals: 2. Method combinations: 4."
+      },
+      "paper_B": {
+        "score": 5,
+        "reasoning": "Novelty claims: 1. Incremental signals: 8. Method combinations: 1."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 5,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'novelty', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "practical_applicability": {
+      "axis": "practical_applicability",
+      "description": "Real-World Deployment Potential",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Scalability signals: 4. Deployment evidence: 1. Applicability limitations: 0."
+      },
+      "paper_B": {
+        "score": 4,
+        "reasoning": "Scalability signals: 1. Deployment evidence: 1. Applicability limitations: 0."
+      },
+      "winner": "A",
+      "score_diff": 2,
+      "score_award": 6,
+      "evidence": {
+        "paper_A_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ],
+        "paper_B_claims": [
+          "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "2018b), summarized in Table 6, and where the improvement over time is seen in Fig."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+        "inference": "On axis 'practical_applicability', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+        "confidence": "medium"
+      }
+    }
+  },
+  "contradiction_report": {
+    "contradiction_count": 0,
+    "claim_level_contradictions": [],
+    "axis_tensions": [
+      {
+        "axis": "problem_framing",
+        "description": "Problem Definition & Relevance",
+        "winner": "A",
+        "score_diff": 2,
+        "logical_reasoning": {
+          "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "inference": "On axis 'problem_framing', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+          "confidence": "medium"
+        }
+      },
+      {
+        "axis": "methodology",
+        "description": "Methodological Validity",
+        "winner": "A",
+        "score_diff": 4,
+        "logical_reasoning": {
+          "premise_A": "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "premise_B": "Therefore we begin by reviewing popular CNN architectures used in Generic Object Detection, followed by a review of the effort devoted to improving object feature representa- tions, such as developing invariant features to accommodate geometric variations in o",
+          "inference": "On axis 'methodology', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 4).",
+          "confidence": "high"
+        }
+      },
+      {
+        "axis": "data_dataset",
+        "description": "Data Quality & Credibility",
+        "winner": "B",
+        "score_diff": 3,
+        "logical_reasoning": {
+          "premise_A": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "inference": "On axis 'data_dataset', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 3).",
+          "confidence": "high"
+        }
+      },
+      {
+        "axis": "results_metrics",
+        "description": "Results & Metrics Appropriateness",
+        "winner": "A",
+        "score_diff": 3,
+        "logical_reasoning": {
+          "premise_A": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "inference": "On axis 'results_metrics', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 3).",
+          "confidence": "high"
+        }
+      },
+      {
+        "axis": "practical_applicability",
+        "description": "Real-World Deployment Potential",
+        "winner": "A",
+        "score_diff": 2,
+        "logical_reasoning": {
+          "premise_A": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "premise_B": "As a result, most of the recent improvements in detection accuracy have been via research into the development of novel networks.",
+          "inference": "On axis 'practical_applicability', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+          "confidence": "medium"
+        }
+      }
+    ]
+  },
+  "live_debate": {
+    "mode": "fallback",
+    "text": "A1: Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021) argues that its evidence supports stronger outcomes in the target problem setting.\nB1: Deep Learning for Generic Object Detection: A Survey (2019) challenges that conclusion by citing alternative framing and assumptions.\nA2: Key claim from Paper A: \"No direct contradiction claim extracted.\".\nB2: Counter-claim from Paper B: \"No direct contradiction claim extracted.\".\nA3: Paper A maintains applicability based on its stated evaluation evidence.\nB3: Paper B argues that broader methodological context weakens Paper A's generalization.\nVerdict: Both papers contribute, but decisions should prioritize directly validated claims and unresolved contradictions."
+  },
+  "verdict_card": {
+    "winner": "A",
+    "winner_id": "paper_7d19cb661bde64f0",
+    "winner_display_name": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021)",
+    "winner_title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+    "total_score_A": 36,
+    "total_score_B": 8,
+    "score_margin": 28,
+    "axes_won": {
+      "A": 5,
+      "B": 1,
+      "tie": 4
+    },
+    "paper_A": {
+      "id": "paper_7d19cb661bde64f0",
+      "title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+      "display_name": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021)",
+      "strongest_axis": "Methodological Validity"
+    },
+    "paper_B": {
+      "id": "paper_8861a66c34b2c6fc",
+      "title": "Deep Learning for Generic Object Detection: A Survey",
+      "display_name": "Deep Learning for Generic Object Detection: A Survey (2019)",
+      "strongest_axis": "Data Quality & Credibility"
+    },
+    "narrative": "\ud83d\udcca VERDICT: paper_7d19cb661bde64f0 dominates across 5 of 10 axes. (Review of deep learning: concepts, CNN architectures, challenges, applications, future directions)\n\ud83c\udfc6 Winner by score margin: 28 points\n\ud83d\udcaa paper_7d19cb661bde64f0's strongest axis: Methodological Validity\n\ud83d\udccc paper_8861a66c34b2c6fc's strongest showing: Data Quality & Credibility\n\n\ud83d\udcc8 Detailed breakdown by axis included in axes_analysis.\n\u2705 Use for literature review, grant decisions, or research direction."
+  },
+  "pair_key": "paper_7d19cb661bde64f0__vs__paper_8861a66c34b2c6fc"
+}

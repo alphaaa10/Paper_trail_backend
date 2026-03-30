@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 import fitz
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/feature", tags=["feature"])
@@ -179,6 +180,19 @@ def citation_jump(payload: CitationRequest, request: Request) -> CitationRespons
         page_number=page_number,
         bbox=bbox,
     )
+
+
+@router.get("/citation/open")
+def citation_open(
+    request: Request,
+    paper_id: str = Query(..., min_length=1),
+    claim_text: str = Query(..., min_length=1),
+) -> RedirectResponse:
+    citation = citation_jump(CitationRequest(paper_id=paper_id, claim_text=claim_text), request)
+    if not citation.pdf_url:
+        raise HTTPException(status_code=404, detail="Unable to resolve a PDF URL for this paper")
+
+    return RedirectResponse(url=f"{citation.pdf_url}#page={citation.page_number}", status_code=307)
 
 
 def _build_pdf_url(pdf_path: Path, request: Request) -> str:

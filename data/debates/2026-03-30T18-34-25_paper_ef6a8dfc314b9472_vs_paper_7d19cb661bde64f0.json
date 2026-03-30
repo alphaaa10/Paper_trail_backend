@@ -1,0 +1,417 @@
+{
+  "paper_A": {
+    "id": "paper_ef6a8dfc314b9472",
+    "title": "Text Data Augmentation for Deep Learning",
+    "display_name": "Text Data Augmentation for Deep Learning (2021)"
+  },
+  "paper_B": {
+    "id": "paper_7d19cb661bde64f0",
+    "title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+    "display_name": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021)"
+  },
+  "axes_analysis": {
+    "problem_framing": {
+      "axis": "problem_framing",
+      "description": "Problem Definition & Relevance",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Clear problem statement (score: 3/3) with 3 relevance signals. Abstract length: 10000 chars."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Clear problem statement (score: 3/3) with 5 relevance signals. Abstract length: 3900 chars."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 6,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'problem_framing', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "literature_review": {
+      "axis": "literature_review",
+      "description": "Literature Coverage & Positioning",
+      "paper_A": {
+        "score": 3,
+        "reasoning": "Referenced 18 sources with 0 positioning statements. Coverage score: 1/4."
+      },
+      "paper_B": {
+        "score": 7,
+        "reasoning": "Referenced 57 sources with 1 positioning statements. Coverage score: 4/4."
+      },
+      "winner": "B",
+      "score_diff": 4,
+      "score_award": 7,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'literature_review', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 4).",
+        "confidence": "high"
+      }
+    },
+    "methodology": {
+      "axis": "methodology",
+      "description": "Methodological Validity",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Method diversity: 4 unique methods. Methodology detail score: 1/2. Validity signals: 0."
+      },
+      "paper_B": {
+        "score": 10,
+        "reasoning": "Method diversity: 4 unique methods. Methodology detail score: 2/2. Validity signals: 3."
+      },
+      "winner": "B",
+      "score_diff": 4,
+      "score_award": 10,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "\u2022 We explain CNN in deep which the most popular deep learning algorithm by describing the concepts, theory, and state-of-the-art architectures.",
+          "Survey methodology We have reviewed the significant research papers in the field published during 2010\u2013 2020, mainly from the years of 2020 and 2019 with some papers from 2021."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+        "inference": "On axis 'methodology', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 4).",
+        "confidence": "high"
+      }
+    },
+    "data_dataset": {
+      "axis": "data_dataset",
+      "description": "Data Quality & Credibility",
+      "paper_A": {
+        "score": 6,
+        "reasoning": "Dataset diversity: 2 unique datasets (1 trusted). Scale signals: 1."
+      },
+      "paper_B": {
+        "score": 5,
+        "reasoning": "Dataset diversity: 1 unique datasets (0 trusted). Scale signals: 2."
+      },
+      "winner": "A",
+      "score_diff": 1,
+      "score_award": 6,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "ADAPET outperforms PET without the use of task-specific unlabeled data."
+        ],
+        "paper_B_claims": [
+          "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "They obtained the state-of-the-art detection results on the dataset of the International Pattern Recognition Conference (ICPR) 2012 Mitosis Detection Competition."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+        "inference": "On axis 'data_dataset', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 1).",
+        "confidence": "medium"
+      }
+    },
+    "results_metrics": {
+      "axis": "results_metrics",
+      "description": "Results & Metrics Appropriateness",
+      "paper_A": {
+        "score": 7,
+        "reasoning": "Metric rigor: 3 signals, 1/3 score. Comparison signals: 2. Evidence-backed claims: 7."
+      },
+      "paper_B": {
+        "score": 7,
+        "reasoning": "Metric rigor: 3 signals, 1/3 score. Comparison signals: 2. Evidence-backed claims: 2."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 7,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+          "Next, the network parameters are repeatedly updated by the agent to obtain an improved esti - mate for the preferred outputs.",
+          "They obtained the state-of-the-art detection results on the dataset of the International Pattern Recognition Conference (ICPR) 2012 Mitosis Detection Competition."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "It has been shown that a suitable data representation pro- vides an improved performance when compared to a poor data representation.",
+        "inference": "On axis 'results_metrics', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "reproducibility": {
+      "axis": "reproducibility",
+      "description": "Reproducibility & Transparency",
+      "paper_A": {
+        "score": 4,
+        "reasoning": "Code/resource signals: 0. Implementation detail score: 1/2. Parameter transparency: 1."
+      },
+      "paper_B": {
+        "score": 4,
+        "reasoning": "Code/resource signals: 0. Implementation detail score: 2/2. Parameter transparency: 0."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 4,
+      "evidence": {
+        "paper_A_claims": [
+          "Evaluated on the STS text similarity dataset, representations learned from DINO show improvements over state-of-the-art sentence embedding techniques trained with supervised learning, such as Universal Sentence Encoders [70] and Siamese BERT and RoBERTa models",
+          "Also worth mention - ing is that the cross-encoder heavily outperforms the bi-encoder with less training data.",
+          "find a significant benefit strategically selecting data to soft label with the cross encoder."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "Evaluated on the STS text similarity dataset, representations learned from DINO show improvements over state-of-the-art sentence embedding techniques trained with supervised learning, such as Universal Sentence Encoders [70] and Siamese BERT and RoBERTa models",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'reproducibility', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "limitations": {
+      "axis": "limitations",
+      "description": "Honest Limitations Statement",
+      "paper_A": {
+        "score": 8,
+        "reasoning": "Limitation depth: 4 signals. Conclusion quality: 2/2. Honesty signals: 1."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Limitation depth: 5 signals. Conclusion quality: 1/2. Honesty signals: 0."
+      },
+      "winner": "A",
+      "score_diff": 2,
+      "score_award": 8,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'limitations', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+        "confidence": "medium"
+      }
+    },
+    "ethical_impact": {
+      "axis": "ethical_impact",
+      "description": "Ethical & Social Considerations",
+      "paper_A": {
+        "score": 5,
+        "reasoning": "Ethical consideration signals: 1. Real-world impact discussion: 3."
+      },
+      "paper_B": {
+        "score": 5,
+        "reasoning": "Ethical consideration signals: 1. Real-world impact discussion: 2."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 5,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'ethical_impact', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "novelty": {
+      "axis": "novelty",
+      "description": "Novelty vs Incremental Work",
+      "paper_A": {
+        "score": 5,
+        "reasoning": "Novelty claims: 0. Incremental signals: 7. Method combinations: 4."
+      },
+      "paper_B": {
+        "score": 5,
+        "reasoning": "Novelty claims: 0. Incremental signals: 2. Method combinations: 4."
+      },
+      "winner": "Tie",
+      "score_diff": 0,
+      "score_award": 5,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'novelty', both papers present similar evidence strength, yielding a tie.",
+        "confidence": "low"
+      }
+    },
+    "practical_applicability": {
+      "axis": "practical_applicability",
+      "description": "Real-World Deployment Potential",
+      "paper_A": {
+        "score": 7,
+        "reasoning": "Scalability signals: 4. Deployment evidence: 3. Applicability limitations: 1."
+      },
+      "paper_B": {
+        "score": 6,
+        "reasoning": "Scalability signals: 4. Deployment evidence: 1. Applicability limitations: 0."
+      },
+      "winner": "A",
+      "score_diff": 1,
+      "score_award": 7,
+      "evidence": {
+        "paper_A_claims": [
+          "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "We present some ideas that have found interesting results with images, but remain to be tested in the text data domain.",
+          "We also describe controllers that search for performance improvements such as AutoAug - ment [7], Population-Based Augmentation [8], and RandAugment [9]."
+        ],
+        "paper_B_claims": [
+          "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "DL is derived from the conventional neural network but considerably outperforms its predecessors."
+        ]
+      },
+      "logical_reasoning": {
+        "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+        "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+        "inference": "On axis 'practical_applicability', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 1).",
+        "confidence": "medium"
+      }
+    }
+  },
+  "contradiction_report": {
+    "contradiction_count": 0,
+    "claim_level_contradictions": [],
+    "axis_tensions": [
+      {
+        "axis": "literature_review",
+        "description": "Literature Coverage & Positioning",
+        "winner": "B",
+        "score_diff": 4,
+        "logical_reasoning": {
+          "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "inference": "On axis 'literature_review', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 4).",
+          "confidence": "high"
+        }
+      },
+      {
+        "axis": "methodology",
+        "description": "Methodological Validity",
+        "winner": "B",
+        "score_diff": 4,
+        "logical_reasoning": {
+          "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "premise_B": "Therefore, in this contribution, we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.",
+          "inference": "On axis 'methodology', Paper B provides comparatively stronger evidence quality and relevance than Paper A (score gap: 4).",
+          "confidence": "high"
+        }
+      },
+      {
+        "axis": "limitations",
+        "description": "Honest Limitations Statement",
+        "winner": "A",
+        "score_diff": 2,
+        "logical_reasoning": {
+          "premise_A": "As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.",
+          "premise_B": "More importantly, DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.",
+          "inference": "On axis 'limitations', Paper A provides comparatively stronger evidence quality and relevance than Paper B (score gap: 2).",
+          "confidence": "medium"
+        }
+      }
+    ]
+  },
+  "live_debate": {
+    "mode": "groq",
+    "text": "A1: Paper A claims \"As our tools for Generative Data Augmentation continue to improve, we will be able to simulate more semantic distribution shifts.\" This suggests a focus on improving data augmentation techniques for deep learning, which is a key aspect of achieving better performance in various domains.\nB1: However, Paper B states \"DL has outperformed well\u2011known ML techniques in many domains, e.g., cybersecurity, natural language processing, bioinformatics, robotics and control, and medical information processing, among many others.\" This implies that deep learning itself is a significant factor in achieving high performance, potentially overshadowing the importance of data augmentation techniques proposed in Paper A.\nA2: Paper A also mentions \"Tuned prompt ensembling improves the average performance of the prompts on SuperGLUE from 88.5, and the best performing individual prompt at 89.8, to 90.5.\" This specific result indicates that the methods proposed in Paper A can lead to tangible improvements in performance, which contradicts the notion that deep learning's inherent capabilities are the sole determining factor in achieving high performance.\nB2: Paper B notes \"a suitable data representation provides an improved performance when compared to a poor data representation.\" While this supports the idea that data representation is crucial, it does not directly address the effectiveness of the specific data augmentation techniques proposed in Paper A. Instead, it highlights the broader importance of data representation in deep learning, which could encompass but is not limited to the methods discussed in Paper A.\nA3: Paper A further claims \"GPT3Mix achieves massive performance improvements over no augmentation, Easy Data Augmentation, and BackTranslation when subsetting available data to extreme levels such as 0.1% and 0.3%.\" This suggests that the data augmentation techniques proposed in Paper A can offer significant benefits, especially in scenarios where data is limited, which is a common challenge in many applications.\nB3: However, Paper B suggests a \"more holistic approach\" to understanding deep learning, implying that focusing solely on data augmentation might be too narrow. It states \"we propose using a more holistic approach in order to provide a more suitable starting point from which to develop a full understanding of DL.\" This critique implies that Paper A's focus on specific techniques might not contribute to a comprehensive understanding of deep learning as a whole.\nVerdict: Both papers present valid points. Paper A demonstrates the effectiveness of specific data augmentation techniques for improving deep learning performance, particularly in scenarios with limited data. Paper B, on the other hand, emphasizes the importance of a broader understanding of deep learning and its applications. While Paper A's claims are supported by specific results, Paper B's holistic approach to deep learning provides a valuable context that is not directly contradicted by Paper A's findings. Therefore, the debate highlights the complementary nature of these perspectives rather than a direct contradiction."
+  },
+  "verdict_card": {
+    "winner": "A",
+    "winner_id": "paper_ef6a8dfc314b9472",
+    "winner_display_name": "Text Data Augmentation for Deep Learning (2021)",
+    "winner_title": "Text Data Augmentation for Deep Learning",
+    "total_score_A": 21,
+    "total_score_B": 17,
+    "score_margin": 4,
+    "axes_won": {
+      "A": 3,
+      "B": 2,
+      "tie": 5
+    },
+    "paper_A": {
+      "id": "paper_ef6a8dfc314b9472",
+      "title": "Text Data Augmentation for Deep Learning",
+      "display_name": "Text Data Augmentation for Deep Learning (2021)",
+      "strongest_axis": "Honest Limitations Statement"
+    },
+    "paper_B": {
+      "id": "paper_7d19cb661bde64f0",
+      "title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+      "display_name": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions (2021)",
+      "strongest_axis": "Literature Coverage & Positioning"
+    },
+    "narrative": "\ud83d\udcca VERDICT: paper_ef6a8dfc314b9472 dominates across 3 of 10 axes. (Text Data Augmentation for Deep Learning)\n\ud83c\udfc6 Winner by score margin: 4 points\n\ud83d\udcaa paper_ef6a8dfc314b9472's strongest axis: Honest Limitations Statement\n\ud83d\udccc paper_7d19cb661bde64f0's strongest showing: Literature Coverage & Positioning\n\n\ud83d\udcc8 Detailed breakdown by axis included in axes_analysis.\n\u2705 Use for literature review, grant decisions, or research direction."
+  },
+  "pair_key": "paper_ef6a8dfc314b9472__vs__paper_7d19cb661bde64f0"
+}

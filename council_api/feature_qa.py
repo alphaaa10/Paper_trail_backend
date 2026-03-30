@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 import httpx
+from dotenv import dotenv_values
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -161,14 +162,35 @@ def _answer_with_groq(question: str, context: str) -> dict | None:
 
 
 def _groq_api_keys() -> list[str]:
+    keys: list[str] = []
+
     pooled = os.getenv("GROQ_API_KEYS", "")
-    keys = [item.strip() for item in pooled.split(",") if item.strip()]
+    keys.extend(item.strip() for item in pooled.split(",") if item.strip())
 
     single = os.getenv("GROQ_API_KEY", "").strip()
-    if single and single not in keys:
+    if single:
         keys.append(single)
 
-    return keys
+    env_path = ROOT_DIR / ".env"
+    if env_path.exists():
+        file_env = dotenv_values(env_path)
+
+        file_pooled = str(file_env.get("GROQ_API_KEYS", "") or "")
+        keys.extend(item.strip() for item in file_pooled.split(",") if item.strip())
+
+        file_single = str(file_env.get("GROQ_API_KEY", "") or "").strip()
+        if file_single:
+            keys.append(file_single)
+
+    unique_keys: list[str] = []
+    seen: set[str] = set()
+    for key in keys:
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_keys.append(key)
+
+    return unique_keys
 
 
 def _extract_chat_content(payload: dict) -> str:

@@ -1,18 +1,27 @@
-Here are high-impact research topics. Pick one that pushes your limits. 
+1. `"does intermittent fasting improve metabolic health or is caloric restriction sufficient"`
 
-**Multi-Agent AI & LLMs**
-1. Consensus mechanisms and hallucination mitigation in multi-agent LLM debates.
-2. Optimizing Retrieval-Augmented Generation (RAG) architectures for low-latency, highly concurrent environments.
-3. Automated AI governance and safety frameworks for multi-agent systems executing unverified operations.
+2. `"transformer vs graph neural network for molecular property prediction"`
 
-**Edge Computing & IoT**
-4. Optimizing TinyML inference models for real-time aerial drone detection on resource-constrained hardware.
-5. Fault-tolerant asynchronous mesh routing protocols over low-bandwidth off-grid LoRa networks.
+3. `"does social media use cause depression in adolescents"`
 
-**Algorithmic Trading & FinTech**
-6. Reinforcement learning applications for latency-arbitrage in high-frequency crypto trading.
-7. Impact of market micro-structure and order book imbalances on slippage in decentralized exchanges.
+4. `"replication crisis in psychology reproducibility of priming effects"`
 
-**Distributed Systems & Cloud Infrastructure**
-8. Dynamic resource provisioning algorithms for cost-optimized serverless AWS deployments.
-9. Synchronization models for offline-first mobile applications relying on eventual consistency.
+5. `"low carb vs low fat diet long term weight loss outcomes"`
+
+6. `"does retrieval augmented generation outperform fine-tuning for knowledge-intensive tasks"`
+
+7. `"sleep deprivation effects on cognitive performance and recovery"`
+
+8. `"antibiotic resistance overuse versus underprescription in clinical settings"`
+
+9. `"reinforcement learning from human feedback alignment versus capability tradeoffs"`
+
+10. `"screen time effects on child development and learning outcomes"`
+
+---
+
+**Best bets for contradictions:** 1, 3, 5, 8 — these are genuinely contested in literature with studies on both sides.
+
+**Best bets for gaps:** 6, 9 — fast-moving areas where papers raise open questions more than they settle them.
+
+**Best for Council Mode demo:** 3 or 5 — clear opposing camps, Skeptic/Synthesizer/Devil's Advocate will produce very different responses.

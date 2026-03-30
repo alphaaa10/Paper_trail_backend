@@ -53,12 +53,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve downloaded PDFs over HTTP so frontend can open them directly in a browser tab.
-app.mount("/pdf", StaticFiles(directory=str(PDF_DIR)), name="pdf_files")
-
 _ensure_data_dirs = [PDF_DIR, METADATA_DIR, EXTRACTED_DIR, REPORTS_DIR, LOGS_DIR]
 for _dir in _ensure_data_dirs:
     _dir.mkdir(parents=True, exist_ok=True)
+
+# Serve downloaded PDFs over HTTP so frontend can open them directly in a browser tab.
+app.mount("/pdf", StaticFiles(directory=str(PDF_DIR)), name="pdf_files")
 
 
 class CrawlRequest(BaseModel):

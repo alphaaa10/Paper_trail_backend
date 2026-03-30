@@ -6,6 +6,7 @@ import re
 from itertools import combinations
 from pathlib import Path
 from typing import AsyncIterator
+from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -546,6 +547,8 @@ def _analyze_axis(axis: str, paper_a: dict, paper_b: dict) -> dict:
         "evidence": {
             "paper_A_claims": evidence_a,
             "paper_B_claims": evidence_b,
+            "paper_A_claim_cards": _claim_cards_for_axis(paper_a, evidence_a),
+            "paper_B_claim_cards": _claim_cards_for_axis(paper_b, evidence_b),
         },
         "logical_reasoning": logical_reasoning,
     }
@@ -573,6 +576,78 @@ def _claims_for_axis(paper: dict, axis: str, max_items: int = 3) -> list[str]:
     if not picked:
         picked = claims
     return picked[:max_items]
+
+
+def _claim_cards_for_axis(paper: dict, claims: list[str]) -> list[dict]:
+    paper_id = " ".join(str(paper.get("paper_id", "")).split())
+    display_name = _paper_display_name(paper)
+    pdf_url = _paper_pdf_url(paper_id) if paper_id else ""
+
+    cards: list[dict] = []
+    for claim in claims:
+        claim_text = " ".join(str(claim).split())
+        if not claim_text:
+            continue
+
+        cards.append(
+            {
+                "paper_id": paper_id,
+                "paper_display_name": display_name,
+                "claim_text": claim_text,
+                "pdf_url": pdf_url,
+                "citation_endpoint": "/feature/citation",
+                "citation_open_url": _citation_open_url(paper_id=paper_id, claim_text=claim_text),
+                "citation_request": {
+                    "paper_id": paper_id,
+                    "claim_text": claim_text,
+                },
+            }
+        )
+
+    return cards
+
+
+def _citation_open_url(paper_id: str, claim_text: str) -> str:
+    return (
+        "/feature/citation/open?paper_id="
+        + quote(paper_id, safe="")
+        + "&claim_text="
+        + quote(claim_text, safe="")
+    )
+
+
+def _paper_pdf_url(paper_id: str) -> str:
+    metadata_path = METADATA_DIR / f"{paper_id}.json"
+    if not metadata_path.exists():
+        return ""
+
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+
+    pdf_candidate = metadata.get("pdf_path", "")
+    if not isinstance(pdf_candidate, str) or not pdf_candidate.strip():
+        paper_obj = metadata.get("paper")
+        if isinstance(paper_obj, dict):
+            fallback_candidate = paper_obj.get("pdf_path", "")
+            if isinstance(fallback_candidate, str):
+                pdf_candidate = fallback_candidate
+
+    if not isinstance(pdf_candidate, str) or not pdf_candidate.strip():
+        return ""
+
+    pdf_path = Path(pdf_candidate.strip())
+    if not pdf_path.is_absolute():
+        pdf_path = ROOT_DIR / pdf_path
+
+    pdf_root = ROOT_DIR / "data" / "pdf"
+    try:
+        relative = pdf_path.resolve().relative_to(pdf_root.resolve())
+    except Exception:
+        return ""
+
+    return "/pdf/" + quote(relative.as_posix())
 
 
 def _build_logical_reasoning(
