@@ -91,6 +91,10 @@ data/pdf/
 data/metadata/
 data/extracted/
 data/reports/
+data/debates/
+data/pdf
+data/logs/
+
 
 # Keep structure and examples if needed
 !data/.gitkeep
