@@ -11,6 +11,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
+if hasattr(fitz, "TOOLS") and hasattr(fitz.TOOLS, "mupdf_display_errors"):
+    fitz.TOOLS.mupdf_display_errors(False)
+
 router = APIRouter(prefix="/feature", tags=["feature"])
 
 ROOT_DIR = Path(__file__).resolve().parents[1]

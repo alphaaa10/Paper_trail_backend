@@ -34,7 +34,7 @@ def build_paper_id(doi: str, title: str) -> str:
 
 async def with_retries(
     operation: Callable[[], Awaitable[T]],
-    retries: int = 3,
+    retries: int = 5,
     base_delay: float = 0.7,
 ) -> T:
     last_error: Exception | None = None

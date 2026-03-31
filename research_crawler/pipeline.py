@@ -373,7 +373,11 @@ class PDFResolver:
             if crawl4ai_link:
                 return crawl4ai_link
 
-        return await self._discover_from_html(client, record.paper_url)
+        html_pdf = await self._discover_from_html(client, record.paper_url)
+        if html_pdf:
+            return html_pdf
+
+        return ""
 
     async def _discover_from_html(self, client: httpx.AsyncClient, page_url: str) -> str:
         async def _request() -> str:
@@ -413,8 +417,8 @@ class PDFResolver:
 
         try:
             async def _crawl() -> object:
-                async with AsyncWebCrawler(verbose=False) as crawler:
-                    return await crawler.arun(url=page_url)
+                async with AsyncWebCrawler(verbose=False, headless=True) as crawler:
+                    return await crawler.arun(url=page_url, cache_mode="bypass")
 
             result = await with_retries(_crawl, retries=2, base_delay=0.5)
         except Exception:  # noqa: BLE001
@@ -468,7 +472,22 @@ class PDFResolver:
 
     @staticmethod
     def _crawl4ai_enabled() -> bool:
-        return os.getenv("CRAWL4AI_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+        enabled = os.getenv("CRAWL4AI_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+        if not enabled:
+            return False
+
+        # Crawl4AI relies on Playwright subprocesses. On Windows, keep it disabled unless
+        # explicitly forced because selector-loop servers will raise NotImplementedError.
+        if os.name == "nt":
+            forced = os.getenv("CRAWL4AI_FORCE_WINDOWS", "0").strip().lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+            return forced
+
+        return True
 
     @staticmethod
     def _looks_like_pdf(url: str) -> bool:
@@ -526,14 +545,28 @@ class PDFDownloader:
         metadata_path = self.metadata_dir / f"{record.paper_id}.json"
 
         async def _download() -> bytes:
-            response = await client.get(resolved_pdf, timeout=self.timeout, follow_redirects=True)
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "application/pdf, text/html",
+                "Referer": resolved_pdf.rsplit("/", 1)[0] + "/",
+            }
+            response = await client.get(resolved_pdf, headers=headers, timeout=self.timeout, follow_redirects=True)
+            if response.status_code == 403:
+                raise RuntimeError(f"Access denied (403) - publisher paywall: {resolved_pdf}")
+            if response.status_code == 404:
+                raise RuntimeError(f"URL not found (404): {resolved_pdf}")
             response.raise_for_status()
             return response.content
 
         try:
             pdf_bytes = await with_retries(_download, retries=3, base_delay=0.8)
         except Exception as exc:  # noqa: BLE001
-            return DownloadResult(paper_id=record.paper_id, status="failed", reason=str(exc))
+            error_msg = str(exc)
+            if "Access denied (403)" in error_msg or "403" in error_msg:
+                return DownloadResult(paper_id=record.paper_id, status="skipped", reason="publisher paywall (403)")
+            if "404" in error_msg:
+                return DownloadResult(paper_id=record.paper_id, status="failed", reason="url not found (404)")
+            return DownloadResult(paper_id=record.paper_id, status="failed", reason=error_msg)
 
         if not self._looks_like_pdf(pdf_bytes):
             return DownloadResult(paper_id=record.paper_id, status="failed", reason="non-pdf content")

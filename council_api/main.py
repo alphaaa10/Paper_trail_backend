@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import sys
 import shutil
 import threading
 from datetime import datetime, timezone
@@ -23,6 +25,11 @@ from council_api.feature_citation_chat import router as citation_chat_router
 from council_api.feature_debate import router as debate_router
 from council_api.feature_heatmap import router as heatmap_router
 from council_api.feature_qa import router as qa_router
+from council_api.browse_router import router as browse_router
+from council_api.crawl_browser_router import router as crawl_visual_router
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT_DIR / "data"
@@ -45,6 +52,8 @@ app.include_router(citation_chat_router)
 app.include_router(debate_router)
 app.include_router(heatmap_router)
 app.include_router(qa_router)
+app.include_router(browse_router)
+app.include_router(crawl_visual_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -132,6 +141,17 @@ def get_log_file(file_name: str, tail: int = 300) -> dict:
     return {"file_name": file_name, "line_count": len(lines), "lines": clipped}
 
 
+@app.get("/logs/recent")
+def get_recent_logs(limit: int = 100) -> dict:
+    path = _resolve_log_file("latest.log")
+    if not path.exists():
+        return {"logs": [], "count": 0, "file_name": "latest.log"}
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    recent = lines[-max(1, limit):] if limit > 0 else lines
+    return {"logs": recent, "count": len(recent), "file_name": "latest.log"}
+
+
 @app.get("/logs/stream")
 async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> StreamingResponse:
     path = _resolve_log_file(file_name)
@@ -170,6 +190,52 @@ async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> Str
         },
     )
 
+@app.get("/logs/recent")
+def get_recent_logs(limit: int = 100) -> dict:
+    path = _resolve_log_file("latest.log")
+    if not path.exists():
+        return {"lines": [], "total": 0, "file_name": "latest.log"}
+
+    all_lines = path.read_text(encoding="utf-8").splitlines()
+    recent = all_lines[-max(1, limit):] if limit > 0 else all_lines
+
+    parsed_lines = []
+    for line in recent:
+        level = "INFO"
+        if "ERROR" in line:
+            level = "ERROR"
+        elif "WARN" in line:
+            level = "WARN"
+        elif "===" in line:
+            level = "SECTION"
+
+        parsed_lines.append({"level": level, "message": line})
+
+    return {"lines": parsed_lines, "total": len(all_lines), "file_name": "latest.log"}
+
+@app.get("/logs/recent")
+def get_recent_logs(limit: int = 100) -> dict:
+    path = _resolve_log_file("latest.log")
+    if not path.exists():
+        return {"lines": [], "total": 0, "file_name": "latest.log"}
+
+    all_lines = path.read_text(encoding="utf-8").splitlines()
+    recent = all_lines[-max(1, limit):] if limit > 0 else all_lines
+
+    parsed_lines = []
+    for line in recent:
+        level = "INFO"
+        if "ERROR" in line:
+            level = "ERROR"
+        elif "WARN" in line:
+            level = "WARN"
+        elif "===" in line:
+            level = "SECTION"
+
+        parsed_lines.append({"level": level, "message": line})
+
+    return {"lines": parsed_lines, "total": len(all_lines), "file_name": "latest.log"}
+
 
 @app.post("/crawl")
 async def crawl(payload: CrawlRequest) -> dict:
@@ -206,12 +272,14 @@ async def crawl(payload: CrawlRequest) -> dict:
         _append_log(f"Crawl failed: {exc}", level="ERROR")
         raise
 
+    _append_log(f"Search topics used: {', '.join(summary.topics)}")
     _append_log(
         "Crawl completed: "
         f"discovered={summary.discovered}, deduped={summary.deduped}, "
         f"saved={summary.saved}, skipped={summary.skipped}, failed={summary.failed}."
     )
     _log_download_results(summary.results)
+    _log_crawl_summary(summary.results)
 
     return {
         "query": summary.query,
@@ -332,6 +400,26 @@ def analyze(payload: AnalyzeRequest) -> dict:
         "gaps": report["gaps"],
         "detailed_report": report.get("detailed_report", {}),
         "report": report,
+    }
+
+
+@app.get("/health/crawler")
+def health_crawler() -> dict:
+    crawl4ai_available = False
+    try:
+        from crawl4ai import AsyncWebCrawler  # type: ignore
+        crawl4ai_available = True
+    except Exception:
+        pass
+
+    crawl4ai_enabled = os.getenv("CRAWL4AI_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+    return {
+        "crawler_status": "ok",
+        "crawl4ai_installed": crawl4ai_available,
+        "crawl4ai_enabled": crawl4ai_enabled,
+        "groq_configured": bool(os.getenv("GROQ_API_KEY", "").strip()),
+        "data_dir": str(DATA_DIR),
     }
 
 
@@ -584,6 +672,44 @@ def _log_download_results(results: list) -> None:
             _append_log(f"Crawl result: paper_id={paper_id}, status={status}, reason={reason}")
         else:
             _append_log(f"Crawl result: paper_id={paper_id}, status={status}")
+
+
+def _log_crawl_summary(results: list) -> None:
+    if not results:
+        return
+
+    skip_reasons: dict[str, int] = {}
+    fail_reasons: dict[str, int] = {}
+
+    for item in results:
+        status = str(getattr(item, "status", "")).strip()
+        reason = str(getattr(item, "reason", "")).strip() or "unknown"
+        if status == "skipped":
+            skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
+        elif status == "failed":
+            fail_reasons[reason] = fail_reasons.get(reason, 0) + 1
+
+    if skip_reasons:
+        _append_log("=== Skip Summary ===")
+        for reason, count in sorted(skip_reasons.items(), key=lambda x: -x[1]):
+            _append_log(f"  {reason}: {count}")
+            if "pdf url not resolved" in reason.lower():
+                _append_log("    → Enable crawl4ai (set CRAWL4AI_ENABLED=1) for better link discovery")
+            elif "paywall" in reason.lower():
+                _append_log("    → Publisher paywall; need institutional access or use open-access mirrors")
+
+    if fail_reasons:
+        _append_log("=== Failure Summary ===")
+        for reason, count in sorted(fail_reasons.items(), key=lambda x: -x[1]):
+            _append_log(f"  {reason}: {count}")
+            if "non-pdf content" in reason.lower():
+                _append_log("    → PDF resolver found HTML; enable crawl4ai or use /pdf/search endpoints")
+            elif "timeout" in reason.lower():
+                _append_log("    → Network timeout; increase timeout (set PDF_DOWNLOAD_TIMEOUT env var)")
+            elif "404" in reason.lower():
+                _append_log("    → Dead/moved URL; check source availability")
+            elif "paywall" in reason.lower() or "403" in reason.lower():
+                _append_log("    → Access denied; paper may require institutional subscription")
 
 
 def _now_iso() -> str:

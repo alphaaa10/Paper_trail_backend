@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Council API",
-    "description": "Postman collection for testing Council backend endpoints.",
+    "description": "Postman collection for testing current Council backend endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -26,8 +26,24 @@
       "value": "We demonstrate significant improvements over prior baselines."
     },
     {
-      "key": "paperIdsCsv",
-      "value": "paper_1ba6db38d4c86a5e,paper_2ba6db38d4c86a5e"
+      "key": "fileName",
+      "value": "latest.log"
+    },
+    {
+      "key": "debateId",
+      "value": "sample_debate_id"
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "crawlVisualSessionId",
+      "value": ""
+    },
+    {
+      "key": "crawlQuery",
+      "value": "graph neural networks traffic forecasting"
     }
   ],
   "item": [
@@ -43,6 +59,119 @@
           ],
           "path": [
             "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Health Crawler",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health/crawler",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health",
+            "crawler"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logs Files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/logs/files",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "logs",
+            "files"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logs File",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/logs/file/{{fileName}}?tail=300",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "logs",
+            "file",
+            "{{fileName}}"
+          ],
+          "query": [
+            {
+              "key": "tail",
+              "value": "300"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logs Stream (SSE)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "text/event-stream"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/logs/stream?file_name=latest.log&follow=true",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "logs",
+            "stream"
+          ],
+          "query": [
+            {
+              "key": "file_name",
+              "value": "latest.log"
+            },
+            {
+              "key": "follow",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logs Recent (JSON for Frontend)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/logs/recent?limit=100",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "logs",
+            "recent"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "100"
+            }
           ]
         }
       }
@@ -206,31 +335,6 @@
       }
     },
     {
-      "name": "Crawl + Report",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"query\": \"\",\n  \"question\": \"How can graph neural networks improve traffic forecasting in smart cities?\",\n  \"topic_count\": 4,\n  \"limit_per_source\": 10,\n  \"max_papers\": 20,\n  \"concurrency\": 6,\n  \"target_research_finding\": \"GNN improves traffic forecasting\",\n  \"top_k\": 10\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/crawl-report",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "crawl-report"
-          ]
-        }
-      }
-    },
-    {
       "name": "Get Latest Report",
       "request": {
         "method": "GET",
@@ -272,6 +376,31 @@
       }
     },
     {
+      "name": "Crawl + Report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"\",\n  \"question\": \"How can graph neural networks improve traffic forecasting in smart cities?\",\n  \"topic_count\": 4,\n  \"limit_per_source\": 10,\n  \"max_papers\": 20,\n  \"concurrency\": 6,\n  \"target_research_finding\": \"GNN improves traffic forecasting\",\n  \"top_k\": 10\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/crawl-report",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-report"
+          ]
+        }
+      }
+    },
+    {
       "name": "Feature Citation Jump",
       "request": {
         "method": "POST",
@@ -293,6 +422,112 @@
           "path": [
             "feature",
             "citation"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Citation Open",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/feature/citation/open?paper_id={{paperId}}&claim_text={{claimText}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "citation",
+            "open"
+          ],
+          "query": [
+            {
+              "key": "paper_id",
+              "value": "{{paperId}}"
+            },
+            {
+              "key": "claim_text",
+              "value": "{{claimText}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Citation Chat",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What evidence supports transformer pretraining improvements?\",\n  \"paper_ids\": [\n    \"{{paperIdA}}\",\n    \"{{paperIdB}}\"\n  ],\n  \"require_citations\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/citation-chat",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "citation-chat"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Ask",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Which paper is strongest for benchmark gains?\",\n  \"paper_ids\": [\n    \"{{paperIdA}}\",\n    \"{{paperIdB}}\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/ask",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "ask"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Most Accurate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_ids\": [\n    \"{{paperIdA}}\",\n    \"{{paperIdB}}\"\n  ],\n  \"question\": \"Which paper has the strongest evidence quality?\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/most-accurate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "most-accurate"
           ]
         }
       }
@@ -328,6 +563,93 @@
       }
     },
     {
+      "name": "Feature Structured Debate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_id_A\": \"{{paperIdA}}\",\n  \"paper_id_B\": \"{{paperIdB}}\",\n  \"paper_ids\": [],\n  \"include_live_debate\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/structured-debate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "structured-debate"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Structured Debate Multi",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_ids\": [\n    \"{{paperIdA}}\",\n    \"{{paperIdB}}\"\n  ],\n  \"include_live_debate\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/feature/structured-debate-multi",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "structured-debate-multi"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Debates List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/feature/debates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "debates"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Feature Debate By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/feature/debates/{{debateId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "feature",
+            "debates",
+            "{{debateId}}"
+          ]
+        }
+      }
+    },
+    {
       "name": "Feature Heatmap",
       "request": {
         "method": "POST",
@@ -349,6 +671,164 @@
           "path": [
             "feature",
             "heatmap"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Browse Start",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/browse/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "browse",
+            "start"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Browse Run",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/browse/run/{{sessionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "browse",
+            "run",
+            "{{sessionId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Browse Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/browse/status/{{sessionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "browse",
+            "status",
+            "{{sessionId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Browse Sessions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/browse/sessions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "browse",
+            "sessions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl Visual Start",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": \"\",\n  \"query\": \"{{crawlQuery}}\",\n  \"max_papers\": 10,\n  \"limit_per_source\": 5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/crawl-visual/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-visual",
+            "start"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl Visual Run",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/crawl-visual/run/{{crawlVisualSessionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-visual",
+            "run",
+            "{{crawlVisualSessionId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl Visual Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/crawl-visual/status/{{crawlVisualSessionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-visual",
+            "status",
+            "{{crawlVisualSessionId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crawl Visual Sessions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/crawl-visual/sessions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "crawl-visual",
+            "sessions"
           ]
         }
       }
