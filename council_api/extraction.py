@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 import httpx
+from bs4 import BeautifulSoup
 from pypdf import PdfReader
 
 SECTION_ORDER = ["abstract", "introduction", "methodology", "results", "conclusion"]
@@ -117,6 +118,46 @@ def extract_from_pdf(paper_id: str, pdf_path: Path, output_dir: Path, metadata: 
     return payload
 
 
+def extract_from_html(paper_id: str, html: str, output_dir: Path, metadata: dict) -> dict:
+    soup = BeautifulSoup(html, "html.parser")
+    text = soup.get_text(separator=" ", strip=True)
+    sections = _split_sections(text)
+    full_text = "\n".join(sections.values())
+
+    groq_result = _extract_with_groq(metadata.get("title", ""), full_text)
+    if groq_result:
+        claims = groq_result.get("claims", [])
+        methods = groq_result.get("methods", [])
+        datasets = groq_result.get("datasets", [])
+    else:
+        claims = _extract_claims(full_text)
+        methods = _extract_keywords(full_text, METHOD_HINTS)
+        datasets = _extract_keywords(full_text, DATASET_HINTS)
+
+    sentences: dict[str, list[str]] = {}
+    for section_name, section_text in sections.items():
+        raw = re.split(r"(?<=[.!?])\s+", section_text)
+        sentences[section_name] = [s.strip() for s in raw if len(s.strip()) > 40]
+
+    payload = {
+        "paper_id": paper_id,
+        "title": metadata.get("title", ""),
+        "source": metadata.get("source", ""),
+        "year": metadata.get("year", ""),
+        "sections": sections,
+        "sentences": sentences,
+        "claims": claims,
+        "methods": methods,
+        "datasets": datasets,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / f"{paper_id}.json").write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8"
+    )
+    return payload
+
+
 def build_report(extracted_dir: Path, paper_ids: list[str] | None = None) -> dict:
     extracted = []
     for path in sorted(extracted_dir.glob("*.json")):
@@ -141,7 +182,7 @@ def build_report(extracted_dir: Path, paper_ids: list[str] | None = None) -> dic
         gaps=gaps,
     )
 
-    return {
+    base_payload = {
         "paper_count": len(extracted),
         "claim_count": len(all_claims),
         "top_methods": method_counter[:10],
@@ -150,6 +191,26 @@ def build_report(extracted_dir: Path, paper_ids: list[str] | None = None) -> dic
         "gaps": gaps,
         "detailed_report": detailed_report,
     }
+
+    comprehensive_summary = _build_comprehensive_executive_summary(
+        extracted_items=extracted,
+        base_report=base_payload,
+    )
+    recent_works = _recent_works(extracted)
+    base_payload["executive_summary"] = {
+        "papers_considered": base_payload["paper_count"],
+        "unanswered_question_count": len(base_payload["gaps"]),
+        "decision_topic_count": len(base_payload["top_methods"]),
+        "contradicting_paper_count": len(base_payload["contradictions"]),
+        "recent_works_count": len(recent_works),
+        "individual_paper_summaries": comprehensive_summary["individual_paper_summaries"],
+        "cross_paper_analysis": comprehensive_summary["cross_paper_analysis"],
+        "critical_insights": comprehensive_summary["critical_insights"],
+    }
+    base_payload["executive_summary_json"] = comprehensive_summary
+    base_payload["executive_summary_markdown"] = _render_executive_summary_markdown(comprehensive_summary)
+
+    return base_payload
 
 
 def build_final_report(
@@ -160,6 +221,8 @@ def build_final_report(
 ) -> dict:
     base = build_report(extracted_dir=extracted_dir, paper_ids=paper_ids)
     extracted_items = _load_extracted_items(extracted_dir=extracted_dir, paper_ids=paper_ids)
+    comprehensive_summary = base.get("executive_summary_json", {})
+    executive_summary_markdown = base.get("executive_summary_markdown", "")
     references = _extract_reference_lines_from_items(extracted_items)
     reference_counter = _count_items(references)
     recent_works = _recent_works(extracted_items)
@@ -178,7 +241,12 @@ def build_final_report(
             "decision_topic_count": len(base["top_methods"]),
             "contradicting_paper_count": len(base["contradictions"]),
             "recent_works_count": len(recent_works),
+            "individual_paper_summaries": comprehensive_summary.get("individual_paper_summaries", []),
+            "cross_paper_analysis": comprehensive_summary.get("cross_paper_analysis", {}),
+            "critical_insights": comprehensive_summary.get("critical_insights", {}),
         },
+        "executive_summary_json": comprehensive_summary,
+        "executive_summary_markdown": executive_summary_markdown,
         "which_question_has_been_circling_but_unanswered": base["gaps"],
         "topics_to_search_for_further_decision": [item["name"] for item in base["top_methods"][:top_k]],
         "contradicting_papers_defying_targeted_research": base["contradictions"][:top_k],
@@ -228,6 +296,296 @@ def build_final_report(
         "detailed_report": base.get("detailed_report", {}),
         "structured_debates": _load_recent_debates(),
     }
+
+
+def _build_comprehensive_executive_summary(extracted_items: list[dict], base_report: dict) -> dict:
+    paper_summaries = [_single_paper_summary(item) for item in extracted_items]
+    contradiction_pairs = (
+        base_report.get("detailed_report", {})
+        .get("contradiction_analysis", {})
+        .get("pairwise_contradictions", [])
+    )
+
+    top_methods = [item.get("name", "") for item in base_report.get("top_methods", []) if item.get("name")]
+    top_datasets = [item.get("name", "") for item in base_report.get("top_datasets", []) if item.get("name")]
+    methodology_differences = []
+    for item in paper_summaries:
+        unique_methods = item.get("methodology_used", [])
+        methodology_differences.append(
+            {
+                "paper_id": item.get("paper_id", ""),
+                "title": item.get("title", ""),
+                "notable_method_choices": unique_methods[:4],
+            }
+        )
+
+    conflicts = []
+    for pair in contradiction_pairs[:12]:
+        conflicts.append(
+            {
+                "paper_a": pair.get("paper_a_id", ""),
+                "paper_b": pair.get("paper_b_id", ""),
+                "conflict_count": pair.get("conflict_count", 0),
+                "explanation": (pair.get("reasons", []) or ["Conflicting claim directions detected."])[0],
+            }
+        )
+
+    support_links = _supporting_pairs(extracted_items=extracted_items, contradiction_pairs=contradiction_pairs)
+    timeline = _timeline_progression(extracted_items)
+
+    effective_approaches = []
+    for method in base_report.get("top_methods", [])[:8]:
+        name = method.get("name", "")
+        count = method.get("count", 0)
+        if not name:
+            continue
+        effective_approaches.append(
+            {
+                "approach": name,
+                "supporting_papers": count,
+                "why_effective": "Appears repeatedly across the corpus and is often linked to key claims/results.",
+            }
+        )
+
+    gaps = base_report.get("detailed_report", {}).get("gaps_between_papers", [])
+    gap_lines = [item.get("gap", "") for item in gaps if item.get("gap")]
+    future_steps = base_report.get("detailed_report", {}).get("future_steps", [])
+
+    return {
+        "individual_paper_summaries": paper_summaries,
+        "cross_paper_analysis": {
+            "common_themes": [
+                {
+                    "theme": "Methodological overlap",
+                    "evidence": top_methods[:6],
+                },
+                {
+                    "theme": "Dataset convergence",
+                    "evidence": top_datasets[:6],
+                },
+            ],
+            "methodology_differences": methodology_differences,
+            "conflicting_conclusions": conflicts,
+            "supporting_or_validating_pairs": support_links,
+            "evolution_of_ideas": timeline,
+        },
+        "critical_insights": {
+            "most_effective_approaches": effective_approaches,
+            "research_gaps_identified": gap_lines or ["No major structural gaps detected in current extraction snapshot."],
+            "opportunities_for_future_work": future_steps,
+        },
+    }
+
+
+def _single_paper_summary(item: dict) -> dict:
+    paper_id = str(item.get("paper_id", "")).strip()
+    title = str(item.get("title", "")).strip()
+    sections = item.get("sections", {}) if isinstance(item.get("sections", {}), dict) else {}
+
+    abstract = " ".join(str(sections.get("abstract", "")).split())
+    intro = " ".join(str(sections.get("introduction", "")).split())
+    methodology_section = " ".join(str(sections.get("methodology", "")).split())
+    results_section = " ".join(str(sections.get("results", "")).split())
+    conclusion_section = " ".join(str(sections.get("conclusion", "")).split())
+
+    problem_statement = _first_sentence(abstract or intro, fallback="Problem statement was not explicitly extracted.")
+    methods = [" ".join(str(x).split()) for x in item.get("methods", []) if str(x).strip()]
+    contributions = _top_distinct_lines(item.get("claims", []), max_items=4)
+    findings = _top_distinct_lines(item.get("claims", []), max_items=3)
+    if results_section:
+        findings = ([ _first_sentence(results_section, fallback="") ] + findings)[:4]
+
+    limitations = _extract_limitations(conclusion_section)
+    if not limitations:
+        limitations = ["Limitations are not explicitly stated in extracted sections."]
+
+    return {
+        "paper_id": paper_id,
+        "title": title,
+        "problem_statement": problem_statement,
+        "methodology_used": methods[:5] if methods else [_first_sentence(methodology_section, fallback="Method details were not clearly extracted.")],
+        "key_contributions": contributions,
+        "results_findings": findings,
+        "limitations": limitations,
+        "tags": _paper_tags(item),
+    }
+
+
+def _supporting_pairs(extracted_items: list[dict], contradiction_pairs: list[dict]) -> list[dict]:
+    conflict_keys = {
+        tuple(sorted([str(item.get("paper_a_id", "")), str(item.get("paper_b_id", ""))]))
+        for item in contradiction_pairs
+    }
+
+    supports: list[dict] = []
+    for i, left in enumerate(extracted_items):
+        left_id = str(left.get("paper_id", "")).strip()
+        left_methods = {str(x).strip().lower() for x in left.get("methods", []) if str(x).strip()}
+        left_tokens = _topic_tokens(left)
+        for right in extracted_items[i + 1 :]:
+            right_id = str(right.get("paper_id", "")).strip()
+            if not left_id or not right_id:
+                continue
+            if tuple(sorted([left_id, right_id])) in conflict_keys:
+                continue
+
+            right_methods = {str(x).strip().lower() for x in right.get("methods", []) if str(x).strip()}
+            right_tokens = _topic_tokens(right)
+            if not (left_methods.intersection(right_methods) or left_tokens.intersection(right_tokens)):
+                continue
+
+            supports.append(
+                {
+                    "paper_a": left_id,
+                    "paper_b": right_id,
+                    "support_signal": "Shared methods/topics with no direct contradiction signal.",
+                }
+            )
+            if len(supports) >= 12:
+                return supports
+    return supports
+
+
+def _timeline_progression(extracted_items: list[dict]) -> list[dict]:
+    timeline = []
+    sorted_items = sorted(extracted_items, key=lambda item: _safe_year(item.get("year", "")))
+    for item in sorted_items:
+        timeline.append(
+            {
+                "year": str(item.get("year", "Unknown")),
+                "paper_id": str(item.get("paper_id", "")),
+                "title": str(item.get("title", "")),
+                "progression_note": _first_sentence(
+                    " ".join(str(item.get("sections", {}).get("conclusion", "")).split()),
+                    fallback="Contributes additional evidence to the evolving topic.",
+                ),
+            }
+        )
+    return timeline
+
+
+def _render_executive_summary_markdown(summary: dict) -> str:
+    lines = ["# Executive Summary", "", "## Individual Paper Summaries"]
+    for paper in summary.get("individual_paper_summaries", []):
+        lines.append(f"### {paper.get('title', 'Untitled')}")
+        lines.append(f"- Problem Statement: {paper.get('problem_statement', '')}")
+        lines.append(f"- Methodology Used: {', '.join(paper.get('methodology_used', [])[:4])}")
+        lines.append(f"- Key Contributions: {'; '.join(paper.get('key_contributions', [])[:3])}")
+        lines.append(f"- Results/Findings: {'; '.join(paper.get('results_findings', [])[:3])}")
+        lines.append(f"- Limitations: {'; '.join(paper.get('limitations', [])[:2])}")
+        lines.append("")
+
+    cross = summary.get("cross_paper_analysis", {})
+    lines.append("## Cross-Paper Analysis")
+    lines.append("- Common Themes: " + "; ".join(
+        [f"{item.get('theme', '')}: {', '.join(item.get('evidence', [])[:4])}" for item in cross.get("common_themes", [])]
+    ))
+    lines.append("- Methodology Differences: " + "; ".join(
+        [f"{item.get('paper_id', '')} -> {', '.join(item.get('notable_method_choices', [])[:3])}" for item in cross.get("methodology_differences", [])[:6]]
+    ))
+    lines.append("- Conflicting Conclusions: " + "; ".join(
+        [f"{item.get('paper_a', '')} vs {item.get('paper_b', '')}: {item.get('explanation', '')}" for item in cross.get("conflicting_conclusions", [])[:5]]
+    ))
+    lines.append("- Supporting Papers: " + "; ".join(
+        [f"{item.get('paper_a', '')} and {item.get('paper_b', '')}" for item in cross.get("supporting_or_validating_pairs", [])[:8]]
+    ))
+    lines.append("- Evolution of Ideas: " + "; ".join(
+        [f"{item.get('year', '')} {item.get('paper_id', '')}: {item.get('progression_note', '')}" for item in cross.get("evolution_of_ideas", [])[:8]]
+    ))
+
+    critical = summary.get("critical_insights", {})
+    lines.append("")
+    lines.append("## Critical Insights")
+    lines.append("- Most Effective Approaches: " + "; ".join(
+        [f"{item.get('approach', '')} ({item.get('supporting_papers', 0)} papers)" for item in critical.get("most_effective_approaches", [])[:6]]
+    ))
+    lines.append("- Research Gaps: " + "; ".join(critical.get("research_gaps_identified", [])[:8]))
+    lines.append("- Opportunities for Future Work: " + "; ".join(critical.get("opportunities_for_future_work", [])[:8]))
+    return "\n".join(lines)
+
+
+def _first_sentence(text: str, fallback: str) -> str:
+    compact = " ".join(str(text).split())
+    if not compact:
+        return fallback
+    parts = re.split(r"(?<=[.!?])\s+", compact)
+    first = parts[0].strip() if parts else ""
+    if not first:
+        return fallback
+    return first[:320]
+
+
+def _top_distinct_lines(lines: list, max_items: int) -> list[str]:
+    output: list[str] = []
+    seen: set[str] = set()
+    for raw in lines:
+        compact = " ".join(str(raw).split())
+        if not compact:
+            continue
+        normalized = compact.lower()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        output.append(compact[:320])
+        if len(output) >= max_items:
+            break
+    return output or ["Not enough extracted evidence for a specific summary line."]
+
+
+def _extract_limitations(conclusion_text: str) -> list[str]:
+    if not conclusion_text:
+        return []
+    sentences = re.split(r"(?<=[.!?])\s+", conclusion_text)
+    signals = []
+    for sentence in sentences:
+        compact = " ".join(sentence.split())
+        low = compact.lower()
+        if any(token in low for token in ["limitation", "future", "however", "challenge", "uncertain"]):
+            signals.append(compact[:280])
+        if len(signals) >= 3:
+            break
+    return signals
+
+
+def _paper_tags(item: dict) -> list[str]:
+    tags: list[str] = []
+    text_blob = " ".join(
+        [
+            str(item.get("title", "")),
+            " ".join(str(x) for x in item.get("methods", [])),
+            " ".join(str(x) for x in item.get("datasets", [])),
+        ]
+    ).lower()
+    mapping = {
+        "ml": ["learning", "neural", "transformer", "cnn", "rnn", "bert"],
+        "health": ["clinical", "diet", "obesity", "metabolic", "diabetes", "patient"],
+        "nlp": ["language", "text", "bert", "retrieval", "question answering"],
+        "cv": ["image", "vision", "cifar", "imagenet", "object detection"],
+    }
+    for tag, keywords in mapping.items():
+        if any(keyword in text_blob for keyword in keywords):
+            tags.append(tag)
+    if not tags:
+        tags.append("research")
+    return tags
+
+
+def _topic_tokens(item: dict) -> set[str]:
+    source = " ".join(
+        [
+            str(item.get("title", "")),
+            str(item.get("sections", {}).get("abstract", "")),
+            str(item.get("sections", {}).get("introduction", "")),
+        ]
+    ).lower()
+    return {token for token in re.findall(r"[a-z]{5,}", source) if token not in STOPWORDS}
+
+
+def _safe_year(raw_year: str) -> int:
+    try:
+        return int(str(raw_year).strip())
+    except Exception:
+        return 9999
 
 
 def _read_pdf_text(pdf_path: Path) -> str:

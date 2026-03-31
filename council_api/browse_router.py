@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import json
 import os
 import uuid
@@ -11,8 +10,8 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 import httpx
+from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException
-from playwright.async_api import Browser, Page, async_playwright
 from pydantic import BaseModel
 
 from council_api.extraction import _next_groq_api_key as _next_groq_key
@@ -24,6 +23,8 @@ router = APIRouter(prefix="/browse", tags=["browse"])
 ROOT_DIR = Path(__file__).resolve().parents[1]
 FINAL_REPORT_PATH = ROOT_DIR / "data" / "reports" / "final_report.json"
 EXTRACTED_DIR = ROOT_DIR / "data" / "extracted"
+PDF_DIR = ROOT_DIR / "data" / "pdf"
+METADATA_DIR = ROOT_DIR / "data" / "metadata"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
@@ -225,85 +226,139 @@ def _parse_queries(payload: dict) -> list[str]:
 
 async def _run_browsing(session_id: str) -> None:
     session = _session_or_404(session_id)
-    browser: Browser | None = None
-    playwright = await async_playwright().start()
     try:
-        browser = await playwright.chromium.launch(headless=False)
-        page = await browser.new_page()
-        await _run_query_loop(page, session)
+        timeout = httpx.Timeout(connect=10.0, read=25.0, write=25.0, pool=25.0)
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            await _run_query_loop(client, session)
         session["status"] = "done"
         session["log"].append("Run completed.")
-    finally:
-        if browser:
-            await browser.close()
-        await playwright.stop()
-
-
-async def _run_query_loop(page: Page, session: dict) -> None:
-    for query in session["queries"]:
-        search_url = f"https://arxiv.org/search/?searchtype=all&query={quote_plus(query)}"
-        await _safe_navigate(page, search_url, session)
-        await _capture_session_shot(page, session)
-        links = await _collect_abs_links(page)
-        for link in links[:3]:
-            await _safe_navigate(page, link, session)
-            await _capture_session_shot(page, session)
-            await _capture_paper(page, link, session)
-            await asyncio.sleep(1.5)
-        session["current_query_index"] += 1
-
-
-async def _safe_navigate(page: Page, url: str, session: dict) -> None:
-    try:
-        await page.goto(url, wait_until="domcontentloaded")
     except Exception as exc:  # noqa: BLE001
-        session["log"].append(f"Navigation failed for {url}: {exc}")
+        session["status"] = "error"
+        session["log"].append(f"Run crashed: {exc}")
+    finally:
+        session["screenshot_base64"] = ""
+
+
+async def _run_query_loop(client: httpx.AsyncClient, session: dict) -> None:
+    max_papers = max(1, len(session.get("queries", [])) * 3)
+    for query in session["queries"]:
+        await _discover_papers(client, session, query)
+        session["current_query_index"] += 1
+    await _process_papers(client, session, max_papers=max_papers)
+
+
+async def _discover_papers(client: httpx.AsyncClient, session: dict, query: str) -> None:
+    search_url = f"https://arxiv.org/search/?searchtype=all&query={quote_plus(query)}"
+    session["log"].append(f"Searching arxiv: {query}")
+    session["current_url"] = search_url
+    session["screenshot_base64"] = ""
+    response = await client.get(search_url)
+    if response.status_code >= 400:
+        session["log"].append(f"Search failed: HTTP {response.status_code}")
         return
-    session["current_url"] = page.url
-    session["log"].append(f"Visited {page.url}")
+    for abs_url in _collect_abs_links(response.text):
+        if _has_abs_url(session["papers_found"], abs_url):
+            continue
+        session["papers_found"].append({"url": abs_url, "status": "discovered"})
 
 
-async def _capture_session_shot(page: Page, session: dict) -> None:
-    raw = await page.screenshot(type="png")
-    encoded = base64.b64encode(raw).decode("utf-8")
-    session["screenshot_base64"] = encoded
+def _collect_abs_links(html: str) -> list[str]:
+    soup = BeautifulSoup(html, "html.parser")
+    links: list[str] = []
+    for node in soup.select("a[href*='/abs/']"):
+        href = " ".join(str(node.get("href", "")).split())
+        if not href:
+            continue
+        url = href if href.startswith("http") else f"https://arxiv.org{href}"
+        if url not in links:
+            links.append(url)
+    return links
 
 
-async def _collect_abs_links(page: Page) -> list[str]:
-    links = await page.eval_on_selector_all(
-        "a[href*='/abs/']",
-        "nodes => nodes.map(n => n.href)",
-    )
-    unique: list[str] = []
-    for link in links:
-        text = " ".join(str(link).split())
-        if text and text not in unique:
-            unique.append(text)
-    return unique
+def _has_abs_url(found: list[dict], abs_url: str) -> bool:
+    for item in found:
+        if " ".join(str(item.get("url", "")).split()) == abs_url:
+            return True
+    return False
 
 
-async def _capture_paper(page: Page, link: str, session: dict) -> None:
-    title = await _read_text(page, "h1.title")
-    abstract = await _read_text(page, "#abs")
-    if not abstract:
-        abstract = await _read_text(page, "blockquote.abstract")
-    clean_title = title.replace("Title:", "").strip() or link
-    paper = PaperRecord(
-        title=clean_title,
-        source="arXiv",
-        paper_url=link,
-        paper_id=build_paper_id("", clean_title),
-    )
-    row = asdict(paper)
+async def _process_papers(client: httpx.AsyncClient, session: dict, max_papers: int) -> None:
+    candidates = [item for item in session["papers_found"] if item.get("status") == "discovered"]
+    for row in candidates[:max_papers]:
+        abs_url = " ".join(str(row.get("url", "")).split())
+        if not abs_url:
+            continue
+        session["current_url"] = abs_url
+        await _process_single_paper(client, session, row, abs_url)
+        await asyncio.sleep(1.0)
+
+
+async def _process_single_paper(client: httpx.AsyncClient, session: dict, row: dict, abs_url: str) -> None:
+    page_response = await client.get(abs_url)
+    if page_response.status_code >= 400:
+        row["status"] = "failed"
+        session["log"].append(f"Processing failed: HTTP {page_response.status_code} {abs_url}")
+        return
+    title, abstract, pdf_url = _parse_abs_page(page_response.text, abs_url)
+    session["log"].append(f"Processing: {title}")
+    record = PaperRecord(title=title, source="arxiv", paper_url=abs_url, paper_id=build_paper_id("", title))
+    row.update(asdict(record))
     row["abstract"] = abstract
-    session["papers_found"].append(row)
-    session["log"].append(f"Captured paper: {clean_title}")
+    if not pdf_url:
+        row["status"] = "failed"
+        return
+    await _download_and_store_pdf(client, record, row, pdf_url)
 
 
-async def _read_text(page: Page, selector: str) -> str:
-    locator = page.locator(selector).first
-    count = await locator.count()
-    if count == 0:
-        return ""
-    text = await locator.inner_text()
-    return " ".join(text.split())
+def _parse_abs_page(html: str, abs_url: str) -> tuple[str, str, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    title = " ".join(soup.select_one("h1.title").get_text(" ", strip=True).replace("Title:", "").split()) if soup.select_one("h1.title") else abs_url
+    abstract = " ".join(soup.select_one("#abs").get_text(" ", strip=True).split()) if soup.select_one("#abs") else ""
+    if not abstract and soup.select_one("blockquote.abstract"):
+        abstract = " ".join(soup.select_one("blockquote.abstract").get_text(" ", strip=True).split())
+    pdf_url = _resolve_pdf_url(soup, abs_url)
+    return title, abstract, pdf_url
+
+
+def _resolve_pdf_url(soup: BeautifulSoup, abs_url: str) -> str:
+    for node in soup.select("a[href]"):
+        href = " ".join(str(node.get("href", "")).split())
+        if not href:
+            continue
+        if href.endswith(".pdf") or "/pdf/" in href:
+            return href if href.startswith("http") else f"https://arxiv.org{href}"
+    if "/abs/" in abs_url:
+        suffix = abs_url.split("/abs/", maxsplit=1)[1]
+        return f"https://arxiv.org/pdf/{suffix}.pdf"
+    return ""
+
+
+async def _download_and_store_pdf(
+    client: httpx.AsyncClient,
+    record: PaperRecord,
+    row: dict,
+    pdf_url: str,
+) -> None:
+    pdf_response = await client.get(pdf_url)
+    data = pdf_response.content if pdf_response.status_code < 400 else b""
+    if not data.startswith(b"%PDF-"):
+        row["status"] = "failed"
+        return
+    PDF_DIR.mkdir(parents=True, exist_ok=True)
+    METADATA_DIR.mkdir(parents=True, exist_ok=True)
+    pdf_path = PDF_DIR / f"{record.paper_id}.pdf"
+    metadata_path = METADATA_DIR / f"{record.paper_id}.json"
+    pdf_path.write_bytes(data)
+    metadata = {
+        "title": record.title,
+        "authors": [],
+        "doi": "",
+        "year": "",
+        "source": record.source,
+        "paper_url": record.paper_url,
+        "pdf_url": pdf_url,
+        "pdf_path": str(pdf_path.as_posix()),
+    }
+    metadata_path.write_text(json.dumps(metadata, ensure_ascii=True, indent=2), encoding="utf-8")
+    row["pdf_url"] = pdf_url
+    row["status"] = "saved"

@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import httpx
 from bs4 import BeautifulSoup
 
+from council_api.extraction import extract_from_html
+
 from research_crawler.models import DownloadResult, PaperRecord, sanitize_record, to_metadata_json
 from research_crawler.utils import build_paper_id, normalize_doi, with_retries
 
@@ -22,6 +24,7 @@ DOI_PATTERN = re.compile(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+", re.IGNORECASE)
 YEAR_PATTERN = re.compile(r"\b(19|20)\d{2}\b")
 ARXIV_ABS_PATTERN = re.compile(r"https?://arxiv\.org/abs/([^/?#]+)", re.IGNORECASE)
 _GROQ_KEY_CURSOR = 0
+EXTRACTED_DIR = Path(__file__).resolve().parents[1] / "data" / "extracted"
 
 
 @dataclass(slots=True)
@@ -565,11 +568,11 @@ class PDFDownloader:
             if "Access denied (403)" in error_msg or "403" in error_msg:
                 return DownloadResult(paper_id=record.paper_id, status="skipped", reason="publisher paywall (403)")
             if "404" in error_msg:
-                return DownloadResult(paper_id=record.paper_id, status="failed", reason="url not found (404)")
-            return DownloadResult(paper_id=record.paper_id, status="failed", reason=error_msg)
+                return await self._failed_with_html_fallback(client, record, "url not found (404)")
+            return await self._failed_with_html_fallback(client, record, error_msg)
 
         if not self._looks_like_pdf(pdf_bytes):
-            return DownloadResult(paper_id=record.paper_id, status="failed", reason="non-pdf content")
+            return await self._failed_with_html_fallback(client, record, "non-pdf content")
 
         pdf_path.write_bytes(pdf_bytes)
         metadata_path.write_text(
@@ -582,6 +585,36 @@ class PDFDownloader:
             status="saved",
             pdf_path=pdf_path,
             metadata_path=metadata_path,
+        )
+
+    async def _failed_with_html_fallback(
+        self,
+        client: httpx.AsyncClient,
+        record: PaperRecord,
+        reason: str,
+    ) -> DownloadResult:
+        if not record.paper_url:
+            return DownloadResult(paper_id=record.paper_id, status="failed", reason=reason)
+        try:
+            response = await client.get(record.paper_url, timeout=self.timeout, follow_redirects=True)
+        except httpx.HTTPError:
+            return DownloadResult(paper_id=record.paper_id, status="failed", reason=reason)
+        if response.status_code >= 400:
+            return DownloadResult(paper_id=record.paper_id, status="failed", reason=reason)
+        metadata = {
+            "title": record.title,
+            "source": record.source,
+            "year": record.year,
+            "doi": record.doi,
+            "authors": record.authors,
+            "paper_url": record.paper_url,
+            "pdf_url": record.pdf_url,
+        }
+        extract_from_html(record.paper_id, response.text, EXTRACTED_DIR, metadata)
+        return DownloadResult(
+            paper_id=record.paper_id,
+            status="failed",
+            reason=f"{reason};no_pdf_extracted_html_instead",
         )
 
     async def save_batch(

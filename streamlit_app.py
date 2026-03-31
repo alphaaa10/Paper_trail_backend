@@ -119,6 +119,8 @@ if "last_report" not in st.session_state:
     st.session_state["last_report"] = None
 if "last_final_report" not in st.session_state:
     st.session_state["last_final_report"] = None
+if "last_knowledge_graph" not in st.session_state:
+    st.session_state["last_knowledge_graph"] = None
 
 
 st.markdown(
@@ -148,7 +150,7 @@ with k3:
 with k4:
     st.metric("Contradictions", int(overview.get("contradiction_count", 0)))
 
-tabs = st.tabs(["Overview", "Run Pipeline", "Papers", "Reports"])
+tabs = st.tabs(["Overview", "Run Pipeline", "Papers", "Reports", "Knowledge Graph"])
 
 with tabs[0]:
     st.subheader("System Snapshot")
@@ -363,6 +365,27 @@ with tabs[3]:
             st.metric("Claim Count", latest.get("claim_count", 0))
             st.metric("Contradictions", len(_safe_list(latest.get("contradictions", []))))
 
+            exec_summary = latest.get("executive_summary", {}) if isinstance(latest.get("executive_summary", {}), dict) else {}
+            if exec_summary:
+                st.markdown("Executive summary")
+                s1, s2, s3 = st.columns(3)
+                with s1:
+                    st.metric("Papers Considered", exec_summary.get("papers_considered", 0))
+                with s2:
+                    st.metric("Unanswered Questions", exec_summary.get("unanswered_question_count", 0))
+                with s3:
+                    st.metric("Recent Works", exec_summary.get("recent_works_count", 0))
+
+            markdown_summary = latest.get("executive_summary_markdown", "")
+            if markdown_summary:
+                st.markdown("Executive summary (readable)")
+                st.markdown(markdown_summary)
+
+            summary_json = latest.get("executive_summary_json", {})
+            if isinstance(summary_json, dict) and summary_json:
+                with st.expander("Executive summary (structured JSON)"):
+                    st.json(summary_json)
+
             top_methods = _safe_list(latest.get("top_methods", []))
             if top_methods:
                 table = [{"method": item.get("name", ""), "count": item.get("count", 0)} for item in top_methods]
@@ -387,3 +410,71 @@ with tabs[3]:
             _show_raw("final-report", final)
         else:
             st.caption("Generate final report to view details.")
+
+with tabs[4]:
+    st.subheader("Knowledge Graph")
+    st.caption("Rewritten from heatmap mode: generates graph relations and React Flow-ready layout data.")
+
+    default_ids = []
+    if isinstance(st.session_state.get("last_papers"), list):
+        default_ids = [item.get("paper_id", "") for item in st.session_state["last_papers"][:6] if item.get("paper_id")]
+
+    selected_ids_text = st.text_input(
+        "Paper IDs (comma-separated)",
+        value=", ".join(default_ids),
+    )
+    target_finding = st.text_input("Target finding (optional)", value="")
+
+    if st.button("Build Knowledge Graph", type="primary", use_container_width=True):
+        selected_ids = [item.strip() for item in selected_ids_text.split(",") if item.strip()]
+        if len(selected_ids) < 2:
+            st.warning("Please provide at least two paper IDs.")
+        else:
+            payload = {
+                "paper_ids": selected_ids,
+                "target_research_finding": target_finding,
+                "top_k": 10,
+                "save_files": True,
+            }
+            ok, result = _api_request("POST", base_url, "/feature/heatmap", payload)
+            if ok and isinstance(result, dict):
+                st.session_state["last_knowledge_graph"] = result
+                st.success("Knowledge graph generated.")
+            else:
+                st.error("Knowledge graph generation failed.")
+                _show_raw("knowledge-graph-error", result)
+
+    graph_payload = st.session_state.get("last_knowledge_graph")
+    if isinstance(graph_payload, dict):
+        knowledge_graph = graph_payload.get("knowledge_graph", {})
+        reactflow_graph = graph_payload.get("reactflow_graph", {})
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Graph Nodes", len(_safe_list(knowledge_graph.get("nodes", []))))
+        with c2:
+            st.metric("Graph Edges", len(_safe_list(knowledge_graph.get("edges", []))))
+        with c3:
+            st.metric("React Flow Nodes", len(_safe_list(reactflow_graph.get("nodes", []))))
+
+        nodes = _safe_list(knowledge_graph.get("nodes", []))
+        if nodes:
+            st.markdown("Nodes")
+            st.dataframe(nodes, use_container_width=True, hide_index=True)
+
+        edges = _safe_list(knowledge_graph.get("edges", []))
+        if edges:
+            st.markdown("Edges")
+            st.dataframe(edges, use_container_width=True, hide_index=True)
+
+        with st.expander("React Flow JSON"):
+            st.json(reactflow_graph)
+
+        saved = graph_payload.get("saved_files", {})
+        if isinstance(saved, dict) and saved:
+            st.caption(
+                "Saved: "
+                + ", ".join([f"{name} -> {path}" for name, path in saved.items()])
+            )
+    else:
+        st.caption("Build a knowledge graph to view nodes, edges, and React Flow payload.")

@@ -26,7 +26,6 @@ from council_api.feature_debate import router as debate_router
 from council_api.feature_heatmap import router as heatmap_router
 from council_api.feature_qa import router as qa_router
 from council_api.browse_router import router as browse_router
-from council_api.crawl_browser_router import router as crawl_visual_router
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -53,7 +52,6 @@ app.include_router(debate_router)
 app.include_router(heatmap_router)
 app.include_router(qa_router)
 app.include_router(browse_router)
-app.include_router(crawl_visual_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -441,8 +439,15 @@ def get_latest_report() -> dict:
         path.write_text(json.dumps(report, ensure_ascii=True, indent=2), encoding="utf-8")
 
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if "detailed_report" not in payload:
-        _append_log("latest_report.json missing detailed_report; rebuilding report payload.", level="WARN")
+    if (
+        "detailed_report" not in payload
+        or "executive_summary_json" not in payload
+        or "executive_summary_markdown" not in payload
+    ):
+        _append_log(
+            "latest_report.json missing enhanced summary fields; rebuilding report payload.",
+            level="WARN",
+        )
         payload = build_report(EXTRACTED_DIR)
         path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
 

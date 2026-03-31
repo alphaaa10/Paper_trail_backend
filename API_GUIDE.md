@@ -235,6 +235,32 @@ curl http://127.0.0.1:8000/report
   ],
   "contradictions": [],
   "gaps": [],
+  "executive_summary": {
+    "papers_considered": 8,
+    "unanswered_question_count": 2,
+    "decision_topic_count": 6,
+    "contradicting_paper_count": 3,
+    "recent_works_count": 4,
+    "individual_paper_summaries": [],
+    "cross_paper_analysis": {},
+    "critical_insights": {}
+  },
+  "executive_summary_json": {
+    "individual_paper_summaries": [],
+    "cross_paper_analysis": {
+      "common_themes": [],
+      "methodology_differences": [],
+      "conflicting_conclusions": [],
+      "supporting_or_validating_pairs": [],
+      "evolution_of_ideas": []
+    },
+    "critical_insights": {
+      "most_effective_approaches": [],
+      "research_gaps_identified": [],
+      "opportunities_for_future_work": []
+    }
+  },
+  "executive_summary_markdown": "# Executive Summary\n...",
   "detailed_report": {
     "paper_profiles": [],
     "contradiction_analysis": {
@@ -379,6 +405,8 @@ data: [DONE]
 ---
 
 ## 13) Feature: Heatmap
+Note: this endpoint now returns a knowledge graph payload for frontend graph rendering.
+
 ### Request
 ```bash
 curl -X POST http://127.0.0.1:8000/feature/heatmap \
@@ -387,7 +415,8 @@ curl -X POST http://127.0.0.1:8000/feature/heatmap \
     "paper_ids": [
       "paper_1ba6db38d4c86a5e",
       "paper_2ba6db38d4c86a5e"
-    ]
+    ],
+    "save_files": true
   }'
 ```
 
@@ -398,41 +427,60 @@ curl -X POST http://127.0.0.1:8000/feature/heatmap \
     "paper_1ba6db38d4c86a5e",
     "paper_2ba6db38d4c86a5e"
   ],
-  "mode": "groq",
-  "matrix": [
-    [
+  "paper_display_names": [
+    {
+      "paper_id": "paper_1ba6db38d4c86a5e",
+      "display_name": "Graph Neural Networks for Traffic Forecasting (2024)"
+    }
+  ],
+  "knowledge_graph": {
+    "nodes": [
       {
-        "from": "paper_1ba6db38d4c86a5e",
-        "to": "paper_1ba6db38d4c86a5e",
-        "contradicts": false,
-        "contradictions": []
-      },
-      {
-        "from": "paper_1ba6db38d4c86a5e",
-        "to": "paper_2ba6db38d4c86a5e",
-        "contradicts": true,
-        "contradictions": [
-          "Paper A reports improvement while Paper B reports no improvement in similar setup."
-        ]
+        "id": "paper_1ba6db38d4c86a5e",
+        "title": "Graph Neural Networks for Traffic Forecasting",
+        "key_methodology": "graph neural network",
+        "main_contribution": "Improves MAE under sparse traffic sensors.",
+        "tags": ["ML"]
       }
     ],
-    [
+    "edges": [
       {
-        "from": "paper_2ba6db38d4c86a5e",
-        "to": "paper_1ba6db38d4c86a5e",
-        "contradicts": true,
-        "contradictions": [
-          "Paper B does not confirm the gain claimed by Paper A."
-        ]
-      },
-      {
-        "from": "paper_2ba6db38d4c86a5e",
-        "to": "paper_2ba6db38d4c86a5e",
-        "contradicts": false,
-        "contradictions": []
+        "source": "paper_1ba6db38d4c86a5e",
+        "target": "paper_2ba6db38d4c86a5e",
+        "relationship": "VALIDATES",
+        "explanation": "No direct contradiction and shared method/problem signals.",
+        "confidence": 0.68
       }
     ]
-  ]
+  },
+  "reactflow_graph": {
+    "nodes": [
+      {
+        "id": "paper_1ba6db38d4c86a5e",
+        "data": {
+          "label": "Graph Neural Networks for Traffic Forecasting",
+          "description": "Method: graph neural network; Contribution: Improves MAE under sparse traffic sensors."
+        },
+        "position": {
+          "x": 120,
+          "y": 80
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e0",
+        "source": "paper_1ba6db38d4c86a5e",
+        "target": "paper_2ba6db38d4c86a5e",
+        "label": "VALIDATES"
+      }
+    ]
+  },
+  "saved_files": {
+    "knowledge_graph_json": "data/reports/knowledge_graph.json",
+    "reactflow_graph_json": "data/reports/reactflow_graph.json"
+  },
+  "mode": "knowledge-graph"
 }
 ```
 
@@ -449,3 +497,7 @@ curl -X POST http://127.0.0.1:8000/feature/heatmap \
 8. POST /feature/heatmap
 9. POST /feature/citation
 10. POST /feature/debate (stream)
+
+Notes:
+- `GET /report` is now the canonical place for executive summary markdown/json.
+- `POST /feature/heatmap` is graph-only and should not be used for summary rendering.
