@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
+from xml.etree import ElementTree as ET
 
 import httpx
 from bs4 import BeautifulSoup
@@ -18,13 +19,20 @@ from research_crawler.utils import build_paper_id, normalize_doi, with_retries
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 OPENALEX_URL = "https://api.openalex.org/works"
+ARXIV_API_URL = "https://export.arxiv.org/api/query"
 S2_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
+S2_BULK_URL = "https://api.semanticscholar.org/graph/v1/paper/search/bulk"
 DUCK_HTML_SEARCH = "https://duckduckgo.com/html/"
 DOI_PATTERN = re.compile(r"10\.\d{4,9}/[-._;()/:A-Z0-9]+", re.IGNORECASE)
 YEAR_PATTERN = re.compile(r"\b(19|20)\d{2}\b")
 ARXIV_ABS_PATTERN = re.compile(r"https?://arxiv\.org/abs/([^/?#]+)", re.IGNORECASE)
 _GROQ_KEY_CURSOR = 0
 EXTRACTED_DIR = Path(__file__).resolve().parents[1] / "data" / "extracted"
+MIN_SAVED_PAPERS = 5
+ARXIV_NS = {
+    "atom": "http://www.w3.org/2005/Atom",
+    "arxiv": "http://arxiv.org/schemas/atom",
+}
 
 
 @dataclass(slots=True)
@@ -217,10 +225,29 @@ async def search_openalex(
         doi = normalize_doi(work.get("doi") or "")
         year = str(work.get("publication_year") or "")
 
+        best_oa_location = work.get("best_oa_location") or {}
         primary_location = work.get("primary_location") or {}
         open_access = work.get("open_access") or {}
-        paper_url = (primary_location.get("landing_page_url") or "").strip()
-        pdf_url = (open_access.get("oa_url") or "").strip()
+        locations = work.get("locations") or []
+
+        pdf_candidates = [
+            (open_access.get("oa_url") or "").strip(),
+            (best_oa_location.get("pdf_url") or "").strip(),
+            (primary_location.get("pdf_url") or "").strip(),
+        ]
+        for location in locations:
+            if not isinstance(location, dict):
+                continue
+            pdf_candidates.append((location.get("pdf_url") or "").strip())
+        pdf_url = next((value for value in pdf_candidates if value), "")
+
+        doi_url = f"https://doi.org/{doi}" if doi else ""
+        landing_candidates = [
+            (best_oa_location.get("landing_page_url") or "").strip(),
+            (primary_location.get("landing_page_url") or "").strip(),
+            doi_url,
+        ]
+        paper_url = next((value for value in landing_candidates if value), "")
 
         records.append(
             PaperRecord(
@@ -256,7 +283,23 @@ async def search_semantic_scholar(
         response.raise_for_status()
         return response.json()
 
-    payload = await with_retries(_request)
+    async def _request_bulk() -> dict:
+        response = await client.get(
+            S2_BULK_URL,
+            params={"query": query, "limit": limit, "fields": fields},
+            headers=headers,
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    try:
+        payload = await with_retries(_request, retries=2, base_delay=0.7)
+    except Exception:
+        if api_key:
+            raise
+        payload = await with_retries(_request_bulk, retries=2, base_delay=0.7)
+
     papers = payload.get("data", [])
     records: list[PaperRecord] = []
 
@@ -292,12 +335,81 @@ async def search_semantic_scholar(
     return records
 
 
+async def search_arxiv(
+    client: httpx.AsyncClient,
+    query: str,
+    limit: int = 10,
+) -> list[PaperRecord]:
+    async def _request() -> str:
+        response = await client.get(
+            ARXIV_API_URL,
+            params={"search_query": f"all:{query}", "start": 0, "max_results": limit},
+            timeout=25.0,
+        )
+        response.raise_for_status()
+        return response.text
+
+    try:
+        xml_text = await with_retries(_request, retries=2, base_delay=0.7)
+        root = ET.fromstring(xml_text)
+    except Exception:  # noqa: BLE001
+        return []
+
+    records: list[PaperRecord] = []
+    for entry in root.findall("atom:entry", ARXIV_NS):
+        title = " ".join((entry.findtext("atom:title", default="", namespaces=ARXIV_NS) or "").split())
+        if not title:
+            continue
+
+        published = (entry.findtext("atom:published", default="", namespaces=ARXIV_NS) or "").strip()
+        year = published[:4] if len(published) >= 4 else ""
+        authors = [
+            " ".join((author.findtext("atom:name", default="", namespaces=ARXIV_NS) or "").split())
+            for author in entry.findall("atom:author", ARXIV_NS)
+        ]
+        authors = [author for author in authors if author]
+
+        paper_url = (entry.findtext("atom:id", default="", namespaces=ARXIV_NS) or "").strip()
+        pdf_url = ""
+        for link in entry.findall("atom:link", ARXIV_NS):
+            href = (link.attrib.get("href") or "").strip()
+            link_title = (link.attrib.get("title") or "").strip().lower()
+            if not href:
+                continue
+            if link_title == "pdf" or "/pdf/" in href:
+                pdf_url = href
+                break
+        if not pdf_url and paper_url:
+            match = ARXIV_ABS_PATTERN.match(paper_url)
+            if match:
+                pdf_url = f"https://arxiv.org/pdf/{match.group(1)}.pdf"
+
+        records.append(
+            PaperRecord(
+                title=title,
+                authors=authors,
+                doi="",
+                year=year,
+                source="arxiv",
+                paper_url=paper_url,
+                pdf_url=pdf_url,
+            )
+        )
+
+    return records
+
+
 def _extract_actual_url(raw_href: str) -> str:
     parsed = urlparse(raw_href)
     if parsed.path == "/l/":
         uddg = parse_qs(parsed.query).get("uddg", [""])[0]
         return uddg or raw_href
     return raw_href
+
+
+def _is_pdf_like_url(url: str) -> bool:
+    lowered = (url or "").lower()
+    return lowered.endswith(".pdf") or "/pdf/" in lowered or "type=pdf" in lowered
 
 
 async def search_duckduckgo(
@@ -346,7 +458,7 @@ async def search_duckduckgo(
                 year=year_match.group(0) if year_match else "",
                 source="duckduckgo",
                 paper_url=paper_url,
-                pdf_url="",
+                pdf_url=paper_url if _is_pdf_like_url(paper_url) else "",
             )
         )
 
@@ -368,34 +480,63 @@ class PDFResolver:
         if self._looks_like_pdf(record.paper_url):
             return record.paper_url
 
-        if not record.paper_url:
+        page_candidates: list[str] = []
+        if record.pdf_url.strip():
+            page_candidates.append(record.pdf_url.strip())
+        if record.paper_url.strip() and record.paper_url.strip() not in page_candidates:
+            page_candidates.append(record.paper_url.strip())
+        if record.doi:
+            doi_url = f"https://doi.org/{record.doi}"
+            if doi_url not in page_candidates:
+                page_candidates.append(doi_url)
+
+        if not page_candidates:
             return ""
 
-        if self._crawl4ai_enabled():
-            crawl4ai_link = await self._discover_with_crawl4ai(record.paper_url)
-            if crawl4ai_link:
-                return crawl4ai_link
+        for page_url in page_candidates:
+            if self._crawl4ai_enabled():
+                crawl4ai_link = await self._discover_with_crawl4ai(page_url)
+                if crawl4ai_link:
+                    return crawl4ai_link
 
-        html_pdf = await self._discover_from_html(client, record.paper_url)
-        if html_pdf:
-            return html_pdf
+            html_pdf = await self._discover_from_html(client, page_url)
+            if html_pdf:
+                return html_pdf
 
         return ""
 
     async def _discover_from_html(self, client: httpx.AsyncClient, page_url: str) -> str:
-        async def _request() -> str:
+        async def _request() -> httpx.Response:
             response = await client.get(page_url, timeout=self.timeout, follow_redirects=True)
             response.raise_for_status()
-            return response.text
+            return response
 
         try:
-            html = await with_retries(_request)
+            response = await with_retries(_request)
         except Exception:  # noqa: BLE001
             return ""
 
+        content_type = (response.headers.get("content-type") or "").lower()
+        if "application/pdf" in content_type:
+            return page_url
+
+        html = response.text
+
         soup = BeautifulSoup(html, "html.parser")
-        anchors = soup.select("a[href]")
         candidates: list[str] = []
+
+        # Many publishers expose direct PDF links via citation metadata rather than visible anchors.
+        for node in soup.select("meta[name='citation_pdf_url'], meta[property='citation_pdf_url'], meta[name='dc.identifier']"):
+            content_val = node.get("content")
+            content = content_val if isinstance(content_val, str) else ""
+            content = content.strip()
+            if not content:
+                continue
+            full = urljoin(page_url, content)
+            if full.startswith("http") and (self._looks_like_pdf(full) or "pdf" in full.lower()):
+                candidates.append(full)
+
+        anchors = soup.select("a[href]")
 
         for anchor in anchors:
             href_val = anchor.get("href")
@@ -694,7 +835,7 @@ class ResearchOrchestrator:
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
             discovered = await self._search_many(client, topics, limit_per_source)
             merged = self._merge_dedupe(discovered)
-            selected = merged[: max(0, max_papers)]
+            selected = self._prioritize_downloadable(merged, max_papers=max_papers)
 
             downloader = PDFDownloader(
                 pdf_dir=self.pdf_dir,
@@ -702,6 +843,19 @@ class ResearchOrchestrator:
                 resolver=PDFResolver(),
             )
             results = await downloader.save_batch(client, selected, concurrency=concurrency)
+
+            target_saved = min(MIN_SAVED_PAPERS, len(merged))
+            if target_saved > 0:
+                attempted_ids = {item.paper_id for item in selected}
+                ordered_pool = self._prioritize_downloadable(merged, max_papers=len(merged))
+                remaining = [item for item in ordered_pool if item.paper_id not in attempted_ids]
+
+                while sum(1 for item in results if item.status == "saved") < target_saved and remaining:
+                    batch_size = max(5, concurrency)
+                    extra_batch = remaining[:batch_size]
+                    remaining = remaining[batch_size:]
+                    extra_results = await downloader.save_batch(client, extra_batch, concurrency=concurrency)
+                    results.extend(extra_results)
 
         saved = sum(1 for item in results if item.status == "saved")
         skipped = sum(1 for item in results if item.status == "skipped")
@@ -718,6 +872,16 @@ class ResearchOrchestrator:
             failed=failed,
             results=results,
         )
+
+    @staticmethod
+    def _prioritize_downloadable(records: list[PaperRecord], max_papers: int) -> list[PaperRecord]:
+        limit = max(0, max_papers)
+        if limit == 0:
+            return []
+
+        with_pdf = [record for record in records if (record.pdf_url or "").strip()]
+        without_pdf = [record for record in records if not (record.pdf_url or "").strip()]
+        return (with_pdf + without_pdf)[:limit]
 
     async def _search_many(
         self,
@@ -754,6 +918,8 @@ class ResearchOrchestrator:
         tasks = [
             asyncio.create_task(search_openalex(client, query, limit=limit_per_source)),
             asyncio.create_task(search_semantic_scholar(client, query, limit=limit_per_source)),
+            asyncio.create_task(search_arxiv(client, query, limit=limit_per_source)),
+            asyncio.create_task(search_duckduckgo(client, f"{query} filetype:pdf", limit=limit_per_source)),
         ]
         settled = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -794,6 +960,7 @@ class ResearchOrchestrator:
     @staticmethod
     def _score(record: PaperRecord) -> int:
         source_weight = {
+            "arxiv": 4,
             "openalex": 3,
             "semantic_scholar": 2,
             "duckduckgo": 1,

@@ -26,6 +26,7 @@ from council_api.feature_debate import router as debate_router
 from council_api.feature_heatmap import router as heatmap_router
 from council_api.feature_qa import router as qa_router
 from council_api.browse_router import router as browse_router
+from council_api.timeline_router import router as timeline_router
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -52,10 +53,11 @@ app.include_router(debate_router)
 app.include_router(heatmap_router)
 app.include_router(qa_router)
 app.include_router(browse_router)
+app.include_router(timeline_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -138,18 +140,6 @@ def get_log_file(file_name: str, tail: int = 300) -> dict:
     clipped = lines[-tail:] if tail > 0 else lines
     return {"file_name": file_name, "line_count": len(lines), "lines": clipped}
 
-
-@app.get("/logs/recent")
-def get_recent_logs(limit: int = 100) -> dict:
-    path = _resolve_log_file("latest.log")
-    if not path.exists():
-        return {"logs": [], "count": 0, "file_name": "latest.log"}
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    recent = lines[-max(1, limit):] if limit > 0 else lines
-    return {"logs": recent, "count": len(recent), "file_name": "latest.log"}
-
-
 @app.get("/logs/stream")
 async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> StreamingResponse:
     path = _resolve_log_file(file_name)
@@ -161,7 +151,7 @@ async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> Str
         while True:
             if not path.exists():
                 payload = {"line": "Log file no longer exists."}
-                yield f"data: {json.dumps(payload, ensure_ascii=True)}\\n\\n"
+                yield f"data: {json.dumps(payload, ensure_ascii=True)}\n\n"
                 return
 
             with path.open("r", encoding="utf-8") as handle:
@@ -172,7 +162,7 @@ async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> Str
             if chunk:
                 for line in chunk.splitlines():
                     payload = {"line": line}
-                    yield f"data: {json.dumps(payload, ensure_ascii=True)}\\n\\n"
+                    yield f"data: {json.dumps(payload, ensure_ascii=True)}\n\n"
             elif not follow:
                 return
 
@@ -188,28 +178,6 @@ async def stream_logs(file_name: str = "latest.log", follow: bool = True) -> Str
         },
     )
 
-@app.get("/logs/recent")
-def get_recent_logs(limit: int = 100) -> dict:
-    path = _resolve_log_file("latest.log")
-    if not path.exists():
-        return {"lines": [], "total": 0, "file_name": "latest.log"}
-
-    all_lines = path.read_text(encoding="utf-8").splitlines()
-    recent = all_lines[-max(1, limit):] if limit > 0 else all_lines
-
-    parsed_lines = []
-    for line in recent:
-        level = "INFO"
-        if "ERROR" in line:
-            level = "ERROR"
-        elif "WARN" in line:
-            level = "WARN"
-        elif "===" in line:
-            level = "SECTION"
-
-        parsed_lines.append({"level": level, "message": line})
-
-    return {"lines": parsed_lines, "total": len(all_lines), "file_name": "latest.log"}
 
 @app.get("/logs/recent")
 def get_recent_logs(limit: int = 100) -> dict:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from itertools import combinations
@@ -14,8 +15,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from council_api.extraction import extract_from_pdf
+from research_crawler.config import load_environment
 
 router = APIRouter(tags=["feature-debate"])
+logger = logging.getLogger("uvicorn.error")
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT_DIR / "data"
@@ -60,14 +63,30 @@ class DebateRequest(BaseModel):
 
 @router.post("/feature/debate")
 async def live_debate(payload: DebateRequest) -> StreamingResponse:
+    logger.info(
+        "[DEBATE] /feature/debate request received: paper_id_A=%s, paper_id_B=%s",
+        payload.paper_id_A,
+        payload.paper_id_B,
+    )
+
+    logger.info("[DEBATE] Loading extracted paper A")
     paper_a = _load_extracted(payload.paper_id_A.strip())
+    logger.info("[DEBATE] Loading extracted paper B")
     paper_b = _load_extracted(payload.paper_id_B.strip())
 
+    logger.info(
+        "[DEBATE] Papers loaded: A=%s, B=%s",
+        paper_a.get("paper_id", ""),
+        paper_b.get("paper_id", ""),
+    )
+
     prompt = _build_debate_prompt(paper_a=paper_a, paper_b=paper_b)
+    logger.info("[DEBATE] Prompt built. Starting SSE stream")
 
     async def event_stream() -> AsyncIterator[str]:
         async for chunk in _stream_groq_debate(prompt):
             yield chunk
+        logger.info("[DEBATE] SSE stream completed")
 
     return StreamingResponse(
         event_stream(),
@@ -83,8 +102,15 @@ async def live_debate(payload: DebateRequest) -> StreamingResponse:
 @router.post("/feature/structured-debate")
 def structured_debate(payload: DebateRequest) -> dict:
     """Analyzes either a pair or a set of papers with pairwise debate outputs."""
+    logger.info(
+        "[DEBATE] /feature/structured-debate request received: paper_ids=%s include_live_debate=%s",
+        payload.paper_ids,
+        payload.include_live_debate,
+    )
+
     requested_ids = [paper_id.strip() for paper_id in payload.paper_ids if paper_id.strip()]
     if len(requested_ids) >= 2:
+        logger.info("[DEBATE] Running structured multi-debate for %d papers", len(requested_ids))
         return _structured_debate_multi(requested_ids, include_live_debate=payload.include_live_debate)
 
     if not payload.paper_id_A.strip() or not payload.paper_id_B.strip():
@@ -95,23 +121,38 @@ def structured_debate(payload: DebateRequest) -> dict:
 
     paper_a = _load_extracted(payload.paper_id_A.strip())
     paper_b = _load_extracted(payload.paper_id_B.strip())
+    logger.info(
+        "[DEBATE] Structured pair loaded: A=%s, B=%s",
+        paper_a.get("paper_id", ""),
+        paper_b.get("paper_id", ""),
+    )
+
     result = _structured_debate_pair(
         paper_a=paper_a,
         paper_b=paper_b,
         include_live_debate=payload.include_live_debate,
     )
     _save_debate_result(result)
+    logger.info("[DEBATE] Structured pair result saved")
     return result
 
 
 @router.post("/feature/structured-debate-multi")
 def structured_debate_multi(payload: DebateRequest) -> dict:
     """Explicit multi-paper endpoint for pairwise debate analysis."""
+    logger.info(
+        "[DEBATE] /feature/structured-debate-multi request received: paper_ids=%s include_live_debate=%s",
+        payload.paper_ids,
+        payload.include_live_debate,
+    )
+
     requested_ids = [paper_id.strip() for paper_id in payload.paper_ids if paper_id.strip()]
     if len(requested_ids) < 2:
         requested_ids = [payload.paper_id_A.strip(), payload.paper_id_B.strip()]
     if len(requested_ids) < 2 or not requested_ids[0] or not requested_ids[1]:
         raise HTTPException(status_code=422, detail="Provide at least two paper_ids.")
+
+    logger.info("[DEBATE] Running structured-debate-multi with %d requested papers", len(requested_ids))
     return _structured_debate_multi(requested_ids, include_live_debate=payload.include_live_debate)
 
 
@@ -148,15 +189,20 @@ def get_debate(debate_id: str) -> dict:
 
 
 def _load_extracted(paper_id: str) -> dict:
+    logger.info("[DEBATE] Resolving paper identifier: %s", paper_id)
     resolved_paper_id = _resolve_paper_id(paper_id)
+    logger.info("[DEBATE] Resolved paper identifier: %s -> %s", paper_id, resolved_paper_id)
+
     path = EXTRACTED_DIR / f"{resolved_paper_id}.json"
     if path.exists():
+        logger.info("[DEBATE] Using existing extracted JSON for %s", resolved_paper_id)
         return json.loads(path.read_text(encoding="utf-8"))
 
     # Auto-extract on demand to make /feature/debate resilient when extract-all
     # has not been run yet.
     metadata_path = METADATA_DIR / f"{resolved_paper_id}.json"
     if not metadata_path.exists():
+        logger.error("[DEBATE] Metadata missing for %s", resolved_paper_id)
         raise HTTPException(
             status_code=404,
             detail=(
@@ -168,6 +214,7 @@ def _load_extracted(paper_id: str) -> dict:
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     pdf_path = Path(metadata.get("pdf_path", ""))
     if not pdf_path.exists():
+        logger.error("[DEBATE] PDF path missing for %s: %s", resolved_paper_id, pdf_path)
         raise HTTPException(
             status_code=404,
             detail=(
@@ -177,13 +224,16 @@ def _load_extracted(paper_id: str) -> dict:
         )
 
     try:
+        logger.info("[DEBATE] Auto-extracting paper %s from PDF", resolved_paper_id)
         extracted = extract_from_pdf(
             paper_id=resolved_paper_id,
             pdf_path=pdf_path,
             output_dir=EXTRACTED_DIR,
             metadata=metadata,
         )
+        logger.info("[DEBATE] Auto-extraction completed for %s", resolved_paper_id)
     except Exception as exc:  # noqa: BLE001
+        logger.error("[DEBATE] Auto-extraction failed for %s: %s", resolved_paper_id, exc)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to auto-extract {resolved_paper_id} for debate: {exc}",
@@ -199,10 +249,12 @@ def _resolve_paper_id(identifier: str) -> str:
 
     path = EXTRACTED_DIR / f"{candidate}.json"
     if path.exists():
+        logger.info("[DEBATE] Identifier %s matched extracted file", candidate)
         return candidate
 
     metadata_path = METADATA_DIR / f"{candidate}.json"
     if metadata_path.exists():
+        logger.info("[DEBATE] Identifier %s matched metadata file", candidate)
         return candidate
 
     key = _normalize_lookup_key(candidate)
@@ -223,8 +275,10 @@ def _resolve_paper_id(identifier: str) -> str:
 
     unique_matches = sorted(set(matches))
     if len(unique_matches) == 1:
+        logger.info("[DEBATE] Identifier %s uniquely matched %s", candidate, unique_matches[0])
         return unique_matches[0]
     if len(unique_matches) > 1:
+        logger.warning("[DEBATE] Identifier %s is ambiguous (%d matches)", candidate, len(unique_matches))
         raise HTTPException(
             status_code=422,
             detail=(
@@ -234,6 +288,7 @@ def _resolve_paper_id(identifier: str) -> str:
             ),
         )
 
+    logger.warning("[DEBATE] Identifier %s did not match any paper", candidate)
     raise HTTPException(
         status_code=404,
         detail=f"No paper matched identifier '{candidate}'. Use paper_id or an exact/unique title.",
@@ -288,8 +343,19 @@ def _short_claims(payload: dict, max_items: int = 8, max_chars: int = 260) -> li
 
 async def _stream_groq_debate(prompt: str) -> AsyncIterator[str]:
     keys = _groq_api_keys()
+    logger.info("[DEBATE] Stream started. Available Groq keys: %d", len(keys))
+
     if not keys:
-        yield _sse_data({"error": "No Groq API key found in environment."})
+        logger.warning("[DEBATE] No Groq key loaded in runtime env; using fallback stream text")
+        fallback_text = (
+            "A1: Live Groq streaming is unavailable in this backend process, so offline fallback mode is active.\n"
+            "B1: Restart the API after setting GROQ_API_KEY or GROQ_API_KEYS in .env to re-enable live model debate.\n"
+            "A2: You can still use structured debate outputs for evidence-based comparisons.\n"
+            "Verdict: Fallback response returned because no Groq API key is loaded at runtime."
+        )
+        yield _sse_data({"token": fallback_text})
+        yield "event: done\ndata: [DONE]\n\n"
+        logger.info("[DEBATE] Fallback stream completed")
         return
 
     payload = {
@@ -306,7 +372,8 @@ async def _stream_groq_debate(prompt: str) -> AsyncIterator[str]:
     }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
-        for api_key in keys:
+        for index, api_key in enumerate(keys, start=1):
+            logger.info("[DEBATE] Attempting Groq streaming with key %d/%d", index, len(keys))
             try:
                 async with client.stream(
                     "POST",
@@ -318,6 +385,12 @@ async def _stream_groq_debate(prompt: str) -> AsyncIterator[str]:
                     json=payload,
                 ) as response:
                     if response.status_code >= 400:
+                        logger.warning(
+                            "[DEBATE] Groq stream returned HTTP %s for key %d/%d",
+                            response.status_code,
+                            index,
+                            len(keys),
+                        )
                         continue
 
                     async for line in response.aiter_lines():
@@ -326,6 +399,7 @@ async def _stream_groq_debate(prompt: str) -> AsyncIterator[str]:
 
                         raw = line[5:].strip()
                         if raw == "[DONE]":
+                            logger.info("[DEBATE] Groq stream finished with [DONE]")
                             yield "event: done\ndata: [DONE]\n\n"
                             return
 
@@ -343,14 +417,26 @@ async def _stream_groq_debate(prompt: str) -> AsyncIterator[str]:
                             yield _sse_data({"token": delta})
 
                     yield "event: done\ndata: [DONE]\n\n"
+                    logger.info("[DEBATE] Groq stream ended without explicit [DONE]")
                     return
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "[DEBATE] Groq stream attempt failed for key %d/%d: %s",
+                    index,
+                    len(keys),
+                    exc,
+                )
                 continue
 
+    logger.error("[DEBATE] All Groq stream attempts failed")
     yield _sse_data({"error": "Failed to stream debate from Groq."})
 
 
 def _groq_api_keys() -> list[str]:
+    # Reload .env on each lookup so keys are picked up after local env edits
+    # without requiring a full machine/session restart.
+    load_environment()
+
     pooled = os.getenv("GROQ_API_KEYS", "")
     keys = [item.strip() for item in pooled.split(",") if item.strip()]
 
@@ -691,6 +777,7 @@ def _build_logical_reasoning(
 def _generate_pair_debate_text(paper_a: dict, paper_b: dict, contradiction_report: dict) -> dict:
     keys = _groq_api_keys()
     if not keys:
+        logger.warning("[DEBATE] No Groq key for structured live debate text; using fallback")
         return {
             "mode": "fallback",
             "text": _fallback_debate_text(paper_a, paper_b, contradiction_report),
@@ -725,7 +812,8 @@ def _generate_pair_debate_text(paper_a: dict, paper_b: dict, contradiction_repor
     }
 
     with httpx.Client(timeout=45.0) as client:
-        for api_key in keys:
+        for index, api_key in enumerate(keys, start=1):
+            logger.info("[DEBATE] Structured Groq attempt %d/%d", index, len(keys))
             try:
                 response = client.post(
                     GROQ_URL,
@@ -736,14 +824,28 @@ def _generate_pair_debate_text(paper_a: dict, paper_b: dict, contradiction_repor
                     json=payload,
                 )
                 if response.status_code >= 400:
+                    logger.warning(
+                        "[DEBATE] Structured Groq HTTP %s on key %d/%d",
+                        response.status_code,
+                        index,
+                        len(keys),
+                    )
                     continue
                 content = _extract_chat_content(response.json())
                 text = "\n".join(line.rstrip() for line in content.splitlines() if line.strip())
                 if text:
+                    logger.info("[DEBATE] Structured Groq generation succeeded")
                     return {"mode": "groq", "text": text[:6000]}
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "[DEBATE] Structured Groq attempt failed on key %d/%d: %s",
+                    index,
+                    len(keys),
+                    exc,
+                )
                 continue
 
+    logger.warning("[DEBATE] Structured Groq attempts exhausted; returning fallback text")
     return {
         "mode": "fallback",
         "text": _fallback_debate_text(paper_a, paper_b, contradiction_report),

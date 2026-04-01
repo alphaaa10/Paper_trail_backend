@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import httpx
@@ -120,13 +121,33 @@ def call_groq(papers: list[dict]) -> dict[str, str]:
 
 
 def _sort_years(values: list[str]) -> list[str]:
-    known = sorted([year for year in values if year != "Unknown"])
-    return known + (["Unknown"] if "Unknown" in values else [])
+    unique = list(dict.fromkeys(values))
+
+    def _rank(year: str) -> tuple[int, int, str]:
+        if year == "Unknown":
+            return (2, 0, year)
+        if year.isdigit():
+            return (0, int(year), year)
+        match = re.search(r"(19|20)\d{2}", year)
+        if match:
+            return (1, int(match.group(0)), year)
+        return (1, 0, year)
+
+    return sorted(unique, key=_rank)
 
 
 @router.get("")
 def get_timeline() -> dict:
     papers = read_papers()
+    if not papers:
+        return {
+            "years": [],
+            "papers": [],
+            "papers_by_year": {},
+            "total_papers": 0,
+            "year_range": {"earliest": "Unknown", "latest": "Unknown"},
+        }
+
     contributions = call_groq(papers)
     grouped: dict[str, list[dict]] = {}
 
@@ -145,8 +166,11 @@ def get_timeline() -> dict:
 
     years = _sort_years(list(grouped.keys()))
     known_years = [year for year in years if year != "Unknown"]
+    papers_flat = [item for year in years for item in grouped[year]]
+
     return {
         "years": years,
+        "papers": papers_flat,
         "papers_by_year": {year: grouped[year] for year in years},
         "total_papers": len(papers),
         "year_range": {
